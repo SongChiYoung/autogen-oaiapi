@@ -12,5 +12,5 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
     idx = server.output_idx
     llm_messages = convert_to_llm_messages(body.messages)
     result = await team.run(task=llm_messages)
-    result = result.messages[-idx]
-    return build_openai_response(result)
+    # result = result.messages[-idx]
+    return build_openai_response(result, idx)
