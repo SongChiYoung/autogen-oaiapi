@@ -31,7 +31,22 @@ class ChatCompletionResponse(BaseModel):
     choices: List[ChatCompletionResponseChoice]
     usage: UsageInfo # UsageInfo 모델 사용
 
+class DeltaMessage(BaseModel):
+    role: Optional[Literal["assistant"]] = None
+    content: Optional[str] = None
 
+class ChatCompletionStreamChoice(BaseModel):
+    index: int
+    delta: DeltaMessage
+    finish_reason: Optional[str] = None
+
+class ChatCompletionStreamResponse(BaseModel):
+    id: str = Field(default_factory=lambda: f"chatcmpl-{uuid.uuid4().hex}")
+    object: str = "chat.completion.chunk"
+    created: int = Field(default_factory=lambda: int(time.time()))
+    model: str
+    choices: List[ChatCompletionStreamChoice]
+    usage: Optional[UsageInfo] = None
 
 # openai style model req/res
 class ModelResponse(BaseModel):
