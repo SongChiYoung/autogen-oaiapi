@@ -8,9 +8,15 @@ router = APIRouter()
 @router.post("/chat/completions", response_model=ChatCompletionResponse)
 async def chat_completions(request: Request, body: ChatCompletionRequest):
     server = request.app.state.server
-    team = server.get_team(body.session_id)
+    team = await server.get_team(body.session_id)
     idx = server.output_idx
+    source = server.source_select
+    treminate_text = server.terminate_message
     llm_messages = convert_to_llm_messages(body.messages)
+    print("========================")
+    print(body)
+    print("========================")
+    request_model = body.model
     result = await team.run(task=llm_messages)
     # result = result.messages[-idx]
-    return build_openai_response(result, idx)
+    return build_openai_response(request_model, result, treminate_text, idx, source)

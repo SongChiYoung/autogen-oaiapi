@@ -5,7 +5,7 @@ from autogen_ext.models.openai import OpenAIChatCompletionClient
 from autogen_agentchat.conditions import MaxMessageTermination, TextMentionTermination
 
 client = OpenAIChatCompletionClient(
-    model="gpt-4o-mini"
+    model="claude-3-5-haiku-20241022"
 )
 agent1 = AssistantAgent(name="writer", model_client=client)
 agent2 = AssistantAgent(name="editor", model_client=client)

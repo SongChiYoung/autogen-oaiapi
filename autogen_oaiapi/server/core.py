@@ -6,6 +6,7 @@ from autogen_oaiapi.app.middleware import RequestContextMiddleware
 from autogen_oaiapi.app.exception_handlers import register_exception_handlers
 from autogen_oaiapi.session_manager.memory import InMemorySessionStore
 from autogen_oaiapi.session_manager.base import BaseSessionStore
+from autogen_agentchat.conditions import TextMentionTermination
 
 class Server:
     def __init__(self, team, output_idx:int|None = None, source_select:str|None = None, session_store: Optional[BaseSessionStore] = None):
@@ -14,21 +15,31 @@ class Server:
         self.team_dump = team.dump_component()
         self.session_store = InMemorySessionStore()
         self.output_idx = output_idx
+        self.source_select = source_select
         self.app = FastAPI()
+        self.terminate_message = ""
 
         # Register routers, middlewares, and exception handlers
         register_routes(self.app, self)
         self.app.add_middleware(RequestContextMiddleware)
         register_exception_handlers(self.app)
 
-    def get_team(self, session_id: str):
+    async def get_team(self, session_id: str):
         team = self.session_store.get(session_id)
         if team is not None:
-            asyncio.run(team.reset())  # 상태 초기화만 수행 (message history, cache 등)
-            return team
+            while True:
+                try:
+                    await team.reset()  # 상태 초기화만 수행 (message history, cache 등)
+                    return team
+                except:
+                    pass
 
         team = self.team_type.load_component(self.team_dump)
         self.session_store.set(session_id, team)
+
+        if isinstance(team._termination_condition, TextMentionTermination):
+            self.terminate_message = team._termination_condition._termination_text
+
         return team
 
     def run(self, host="0.0.0.0", port=8000):
