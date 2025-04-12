@@ -14,5 +14,5 @@ team = RoundRobinGroupChat(
     termination_condition=TextMentionTermination("TERMINATE")
 )
 
-server = Server(team=team, output_idx=2)
+server = Server(team=team, source_select="writer")
 server.run()

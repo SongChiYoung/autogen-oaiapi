@@ -9,7 +9,7 @@ def build_openai_response(result, idx=None, source=None):
     total_prompt_tokens = 0
     total_completion_tokens = 0
 
-    # print(f"result: {result}")
+    print(f"result: {result}")
     result_message=None
     for message in result.messages:
         if tokens:=message.models_usage:

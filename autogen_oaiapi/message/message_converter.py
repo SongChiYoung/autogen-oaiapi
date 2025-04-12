@@ -11,6 +11,6 @@ def convert_to_llm_messages(messages: list[ChatMessage]):
             converted.append(TextMessage(content=m.content, source="user"))
         elif m.role == "assistant":
             converted.append(TextMessage(content=m.content, source="assistant"))
-        # elif m.role == "system":
-        #     converted.append(SystemMessage(content=m.content))
+        elif m.role == "system":
+            converted.append(TextMessage(content=m.content, source="system"))
     return converted

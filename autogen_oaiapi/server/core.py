@@ -8,7 +8,7 @@ from autogen_oaiapi.session_manager.memory import InMemorySessionStore
 from autogen_oaiapi.session_manager.base import BaseSessionStore
 
 class Server:
-    def __init__(self, team, output_idx:int = 1, session_store: Optional[BaseSessionStore] = None):
+    def __init__(self, team, output_idx:int|None = None, source_select:str|None = None, session_store: Optional[BaseSessionStore] = None):
         self.session_store = session_store or InMemorySessionStore()
         self.team_type = type(team)
         self.team_dump = team.dump_component()
