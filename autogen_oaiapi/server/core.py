@@ -13,7 +13,6 @@ class Server:
         self.session_store = session_store or InMemorySessionStore()
         self.team_type = type(team)
         self.team_dump = team.dump_component()
-        self.session_store = InMemorySessionStore()
         self.output_idx = output_idx
         self.source_select = source_select
         self.app = FastAPI()
