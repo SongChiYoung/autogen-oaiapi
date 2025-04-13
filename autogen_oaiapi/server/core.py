@@ -29,7 +29,7 @@ class Server:
         if team is not None:
             while True:
                 try:
-                    await team.reset()  # 상태 초기화만 수행 (message history, cache 등)
+                    await team.reset()  # Reset the team state instead of reloading
                     return team
                 except:
                     pass

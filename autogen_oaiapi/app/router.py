@@ -9,7 +9,7 @@ def register_routes(app, server):
     api_router.include_router(models_router, prefix="/v1")
     app.include_router(api_router)
 
-    # server 객체를 app에 주입
+    # server is passed to the app state for access in routes
     app.state.server = server
 
     app.add_middleware(

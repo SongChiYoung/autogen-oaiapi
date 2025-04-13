@@ -24,12 +24,12 @@ class UsageInfo(BaseModel):
     total_tokens: int
 
 class ChatCompletionResponse(BaseModel):
-    id: str = Field(default_factory=lambda: f"chatcmpl-{uuid.uuid4().hex}") # 고유 ID 자동 생성
+    id: str = Field(default_factory=lambda: f"chatcmpl-{uuid.uuid4().hex}") # build uuid for id
     object: str = "chat.completion"
-    created: int = Field(default_factory=lambda: int(time.time())) # 현재 Unix 타임스탬프 자동 생성
-    model: str # 모델명은 응답 생성 시 명시적으로 전달받아야 함
+    created: int = Field(default_factory=lambda: int(time.time())) # build timestamp for created
+    model: str # model name is passed from request
     choices: List[ChatCompletionResponseChoice]
-    usage: UsageInfo # UsageInfo 모델 사용
+    usage: UsageInfo
 
 class DeltaMessage(BaseModel):
     role: Optional[Literal["assistant"]] = None
