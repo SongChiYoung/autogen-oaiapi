@@ -12,7 +12,7 @@ from autogen_oaiapi.base.types import (
     DeltaMessage,
 )
 
-async def build_openai_response(model_name, result, trminate_text = "", idx=None, source=None, is_stream=False):
+async def build_openai_response(model_name, result, terminate_text = "", idx=None, source=None, is_stream=False):
     if idx is None and source is None:
         idx = 0
     if idx is not None and source is not None:
@@ -43,7 +43,7 @@ async def build_openai_response(model_name, result, trminate_text = "", idx=None
     else:
         content = result_message.content
 
-    content = content.replace(trminate_text, "")
+    content = content.replace(terminate_text, "")
 
     if not is_stream:
         response = ChatCompletionResponse(
