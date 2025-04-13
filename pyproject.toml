@@ -31,6 +31,7 @@ dependencies = [
   "autogen-core>=0.5.1",
   "autogen-ext>=0.5.1",
   "autogen-ext[openai]>=0.5.1",
+  "autogen-agentchat>=0.5.1",
 ]
 
 [project.urls]
