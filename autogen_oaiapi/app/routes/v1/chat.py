@@ -23,7 +23,7 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
         # Streaming response: response AsyncGenerator wrapping by StreamingResponse
         result = team.run_stream(task=llm_messages)
         response = await build_openai_response(request_model, result, terminate_texts, idx, source, is_stream=is_stream, previous_messages=len_llm_messages)
-        if isinstance(team.run_stream(task=llm_messages), AsyncGenerator):
+        if isinstance(response, AsyncGenerator):
              return StreamingResponse(response, media_type="text/event-stream")
         else:
              # TODO: right formatting for error response
