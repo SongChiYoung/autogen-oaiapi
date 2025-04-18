@@ -127,7 +127,7 @@ async def build_openai_response(model_name, result, terminate_texts = [], idx=No
             message_count = 0
             # 2. content chunk (streaming)
             async for message in result:
-                if previous_messages > 0:
+                if previous_messages > message_count:
                     message_count += 1
                     continue
                 # print(f"message: {message}")
