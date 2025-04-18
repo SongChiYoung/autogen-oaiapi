@@ -25,17 +25,17 @@ class Server:
         register_exception_handlers(self.app)
 
     async def get_team(self, session_id: str):
-        team = self.session_store.get(session_id)
-        if team is not None:
-            while True:
-                try:
-                    await team.reset()  # Reset the team state instead of reloading
-                    return team
-                except:
-                    pass
+        session = self.session_store.get(session_id)
+        # if team := session.get("team", None) is not None:
+        #     while True:
+        #         try:
+        #             await team.reset()  # Reset the team state instead of reloading
+        #             return team
+        #         except:
+        #             pass
 
         team = self.team_type.load_component(self.team_dump)
-        self.session_store.set(session_id, team)
+        # self.session_store.set(session_id, team)
 
         def get_termination_conditions(termination_condition):
             if isinstance(termination_condition, str):
@@ -53,6 +53,11 @@ class Server:
         self.terminate_messages = get_termination_conditions(team._termination_condition)
 
         return team
+
+    async def cleanup_team(self, session_id: str, team):
+        # Cleanup logic for the team
+        pass
+
 
     def run(self, host="0.0.0.0", port=8000):
         import uvicorn
