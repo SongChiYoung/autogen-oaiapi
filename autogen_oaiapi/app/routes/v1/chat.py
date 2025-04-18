@@ -13,22 +13,25 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
     team = await server.get_team(body.session_id)
     idx = server.output_idx
     source = server.source_select
-    terminate_text = server.terminate_message
+    terminate_texts = server.terminate_messages
     llm_messages = convert_to_llm_messages(body.messages)
+    len_llm_messages = len(llm_messages)
     request_model = body.model
     is_stream = body.stream
-    result = await team.run(task=llm_messages)
-    response = await build_openai_response(request_model, result, terminate_text, idx, source, is_stream=is_stream)
-
+    
     if is_stream:
         # Streaming response: response AsyncGenerator wrapping by StreamingResponse
-        if isinstance(response, AsyncGenerator):
+        result = team.run_stream(task=llm_messages)
+        response = await build_openai_response(request_model, result, terminate_texts, idx, source, is_stream=is_stream, previous_messages=len_llm_messages)
+        if isinstance(team.run_stream(task=llm_messages), AsyncGenerator):
              return StreamingResponse(response, media_type="text/event-stream")
         else:
              # TODO: right formatting for error response
              return {"error": "Failed to generate stream"}, 500
     else:
         # Non-streaming response: returning the response directly
+        result = await team.run(task=llm_messages)
+        response = await build_openai_response(request_model, result, terminate_texts, idx, source, is_stream=is_stream, previous_messages=len_llm_messages)
         if isinstance(response, ChatCompletionResponse):
             return response
         else:
