@@ -24,7 +24,7 @@ def clean_message(content, removers):
     return content
         
 
-def build_content_chunk(request_id, model_name, content, finish_reason=None):
+async def build_content_chunk(request_id, model_name, content, finish_reason=None):
     content_chunk = ChatCompletionStreamResponse(
         id=request_id,
         model=model_name,
@@ -121,7 +121,7 @@ async def build_openai_response(model_name, result, terminate_texts = [], idx=No
             yield f"data: {initial_chunk.model_dump_json()}\n\n"
             # await asyncio.sleep(0.01) # wait for a short time
 
-            content_chunk = build_content_chunk(request_id, model_name, "<think>")
+            content_chunk = await build_content_chunk(request_id, model_name, "<think>")
             yield f"data: {content_chunk.model_dump_json()}\n\n"
 
             message_count = 0
@@ -133,14 +133,16 @@ async def build_openai_response(model_name, result, terminate_texts = [], idx=No
                 # print(f"message: {message}")
                 # print(f"message.type: {type(message)}")
                 if hasattr(message, "content") and message.content:
-                    content_chunk = build_content_chunk(request_id, model_name, message.content)
+                    content_chunk = await build_content_chunk(request_id, model_name, f"{message.source}\n{message.content}")
                     yield f"data: {content_chunk.model_dump_json()}\n\n"
             else:
-                content_chunk = build_content_chunk(request_id, model_name, "</think>")
+                content_chunk = await build_content_chunk(request_id, model_name, "</think>")
                 yield f"data: {content_chunk.model_dump_json()}\n\n"
 
                 content, total_prompt_tokens, total_completion_tokens, total_tokens = return_last_message(message)
-                content_chunk = build_content_chunk(request_id, model_name, content)
+                if content.strip() == "":
+                    content = "no response"
+                content_chunk = await build_content_chunk(request_id, model_name, content)
                 yield f"data: {content_chunk.model_dump_json()}\n\n"
 
             # 3. End chunk (finish reason)

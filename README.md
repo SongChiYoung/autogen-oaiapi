@@ -42,3 +42,8 @@ server.run()
 ```
 
 Just write AutoGen team, and... Run it!
+
+---
+
+## Demo
+![Demo](./demo.gif)
