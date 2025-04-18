@@ -3,6 +3,7 @@ from typing import List, Optional, Literal, Union
 import uuid
 import time
 
+
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant", "system"]
     content: Union[str, None]
@@ -47,24 +48,3 @@ class ChatCompletionStreamResponse(BaseModel):
     model: str
     choices: List[ChatCompletionStreamChoice]
     usage: Optional[UsageInfo] = None
-
-# openai style model req/res
-class ModelResponse(BaseModel):
-    id: str
-    object: str
-    created: int
-    owned_by: str
-
-class ModelListResponse(BaseModel):
-    data: List[ModelResponse]
-    object: str
-
-class ModelListRequest(BaseModel):
-    model: str
-    messages: List[ChatMessage]
-    stream: Optional[bool] = False
-    temperature: Optional[float] = 0.7
-    top_p: Optional[float] = 1.0
-    n: Optional[int] = 1
-    stop: Optional[List[str]] = None
-    max_tokens: Optional[int] = 1000
