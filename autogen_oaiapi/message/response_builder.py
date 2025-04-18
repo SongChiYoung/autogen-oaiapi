@@ -71,7 +71,7 @@ async def build_openai_response(model_name, result, terminate_texts = [], idx=No
         if result_message is None:
             content = ""
         else:
-            content = result_message.content
+            content = result_message.to_text()
 
         content = clean_message(content, terminate_texts)
 
@@ -133,7 +133,8 @@ async def build_openai_response(model_name, result, terminate_texts = [], idx=No
                 # print(f"message: {message}")
                 # print(f"message.type: {type(message)}")
                 if hasattr(message, "content") and message.content:
-                    content_chunk = await build_content_chunk(request_id, model_name, f"{message.source}\n{message.content}")
+                    content = message.to_text()
+                    content_chunk = await build_content_chunk(request_id, model_name, f"{message.source}\n{content}")
                     yield f"data: {content_chunk.model_dump_json()}\n\n"
             else:
                 content_chunk = await build_content_chunk(request_id, model_name, "</think>")
