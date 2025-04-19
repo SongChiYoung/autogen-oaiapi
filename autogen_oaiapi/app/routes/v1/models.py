@@ -6,8 +6,14 @@ router = APIRouter()
 @router.get("/models", response_model=ModelListResponse)
 async def chat_completions(request: Request):
     """
-    Handles the OPTIONS request for the /chat/completions/models endpoint.
+    Handle the OPTIONS request for the /chat/completions/models endpoint.
     Returns a list of available models.
+
+    Args:
+        request (Request): The FastAPI request object.
+
+    Returns:
+        ModelListResponse: The response containing the list of available models.
     """
     # In this case, we are just returning an empty list of models
     return ModelListResponse(

@@ -6,4 +6,8 @@ from autogen_agentchat.teams import BaseGroupChat
 
 @dataclass
 class SessionContext:
-    ...
+    """
+    Dataclass for storing session context information.
+
+    Extend this class to include additional session-related fields as needed.
+    """

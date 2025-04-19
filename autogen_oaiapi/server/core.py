@@ -10,6 +10,15 @@ from autogen_agentchat.conditions import TextMentionTermination
 from autogen_agentchat.base import AndTerminationCondition, OrTerminationCondition
 
 class Server:
+    """
+    OpenAI-compatible API server for AutoGen teams.
+
+    Args:
+        team: The team (e.g., GroupChat or SocietyOfMindAgent) to use for handling chat sessions.
+        output_idx (int | None): Index of the output message to select (if applicable).
+        source_select (str | None): Name of the agent whose output should be selected.
+        session_store (BaseSessionStore | None): Custom session store backend. Defaults to in-memory.
+    """
     def __init__(self, team, output_idx:int|None = None, source_select:str|None = None, session_store: Optional[BaseSessionStore] = None):
         self.session_store = session_store or InMemorySessionStore()
         self.team_type = type(team)
@@ -25,6 +34,15 @@ class Server:
         register_exception_handlers(self.app)
 
     async def get_team(self, session_id: str):
+        """
+        Retrieve or initialize the team for a given session.
+
+        Args:
+            session_id (str): The session identifier.
+
+        Returns:
+            team: The loaded team instance for the session.
+        """
         session = self.session_store.get(session_id)
         # if team := session.get("team", None) is not None:
         #     while True:
@@ -55,10 +73,24 @@ class Server:
         return team
 
     async def cleanup_team(self, session_id: str, team):
+        """
+        Cleanup logic for the team after a session ends.
+
+        Args:
+            session_id (str): The session identifier.
+            team: The team instance to clean up.
+        """
         # Cleanup logic for the team
         pass
 
 
     def run(self, host="0.0.0.0", port=8000):
+        """
+        Start the FastAPI server using Uvicorn.
+
+        Args:
+            host (str): Host address to bind. Defaults to "0.0.0.0".
+            port (int): Port number. Defaults to 8000.
+        """
         import uvicorn
         uvicorn.run(self.app, host=host, port=port)

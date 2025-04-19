@@ -13,6 +13,16 @@ from autogen_oaiapi.base.types import (
 )
 
 def clean_message(content, removers):
+    """
+    Remove specified substrings and default markers from the message content.
+
+    Args:
+        content (str): The message content to clean.
+        removers (list[str]): List of substrings to remove from the content.
+
+    Returns:
+        str: Cleaned message content.
+    """
     for remover in removers:
         content = content.replace(remover, "")
     content = (
@@ -25,6 +35,18 @@ def clean_message(content, removers):
         
 
 async def build_content_chunk(request_id, model_name, content, finish_reason=None):
+    """
+    Build a ChatCompletionStreamResponse chunk for streaming responses.
+
+    Args:
+        request_id (str): Unique request identifier.
+        model_name (str): Name of the model generating the response.
+        content (str): Content to include in the chunk.
+        finish_reason (str, optional): Reason for finishing the chunk. Defaults to None.
+
+    Returns:
+        ChatCompletionStreamResponse: The constructed response chunk.
+    """
     content_chunk = ChatCompletionStreamResponse(
         id=request_id,
         model=model_name,
@@ -42,6 +64,24 @@ async def build_content_chunk(request_id, model_name, content, finish_reason=Non
 
 
 async def build_openai_response(model_name, result, terminate_texts = [], idx=None, source=None, is_stream=False, previous_messages=0):
+    """
+    Build a response compatible with the OpenAI ChatCompletion API.
+
+    Args:
+        model_name (str): Name of the model.
+        result: The result object or async generator from the team.
+        terminate_texts (list[str], optional): List of termination texts to remove. Defaults to [].
+        idx (int, optional): Index of the message to select. Defaults to None.
+        source (str, optional): Source agent name to select. Defaults to None.
+        is_stream (bool, optional): Whether to stream the response. Defaults to False.
+        previous_messages (int, optional): Number of previous messages to skip in streaming. Defaults to 0.
+
+    Returns:
+        ChatCompletionResponse | AsyncGenerator | None: The response object or async generator for streaming.
+
+    Raises:
+        ValueError: If both idx and source are provided.
+    """
     if idx is None and source is None:
         idx = 0
     if idx is not None and source is not None:

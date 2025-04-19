@@ -9,6 +9,19 @@ router = APIRouter()
 
 @router.post("/chat/completions", response_model=ChatCompletionResponse)
 async def chat_completions(request: Request, body: ChatCompletionRequest):
+    """
+    Handle chat completion requests for the OpenAI-compatible API.
+
+    Args:
+        request (Request): The FastAPI request object.
+        body (ChatCompletionRequest): The chat completion request payload.
+
+    Returns:
+        ChatCompletionResponse | StreamingResponse | dict: The chat completion response, streaming response, or error dict.
+
+    Raises:
+        500: If the completion or stream generation fails.
+    """
     server = request.app.state.server
     team = await server.get_team(body.session_id)
     idx = server.output_idx
