@@ -38,12 +38,23 @@ team = RoundRobinGroupChat(
 )
 
 server = Server(team=team, source_select="writer")
-server.run()
+server.run(host="0.0.0.0", port=8000)  # you could do not filled that args. default is that host="0.0.0.0", port=8000
 ```
 
 Just write AutoGen team, and... Run it!
 
+CURL call test!
+example
+```bash
+curl -X POST http://localhost:8000/v1/chat/completions \
+ -H "Content-Type: application/json" \
+ -d '{
+ "session_id": "test-session",
+ "messages": [ { "role": "user", "content": "Please write 5 funny stories." } ]
+}'
+```
+
 ---
 
 ## Demo
-![Demo](./demo.gif)
+![Demo](https://github.com/SongChiYoung/autogen-oaiapi/blob/main/demo.gif?raw=true)
