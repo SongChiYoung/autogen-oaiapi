@@ -7,6 +7,17 @@ Deploy your own `/v1/chat/completions` endpoint using any AutoGen-compatible tea
 
 🚀 **Try it? → Don’t forget to ⭐ the repo if useful!**
 
+
+> A **self-hosted**, **open-source alternative** to OpenAI’s ChatCompletion API, built on top of Microsoft AutoGen.
+> 
+> 🔍 **Looking for**:
+> - **OpenAI-style API server** you can run locally?
+> - An **AutoGen-based ChatCompletion** implementation?
+> - A **FastAPI wrapper** for multi-agent LLM orchestration?
+> 
+> You found it. 🚀
+
+
 ---
 
 ## ✨ Features
