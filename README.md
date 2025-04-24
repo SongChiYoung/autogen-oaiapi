@@ -1,7 +1,11 @@
 # 🧠 autogen-oaiapi
+[![GitHub stars](https://img.shields.io/github/stars/SongChiYoung/autogen-oaiapi?style=social)](https://github.com/SongChiYoung/autogen-oaiapi/stargazers)
+[![Downloads](https://static.pepy.tech/personalized-badge/autogen-oaiapi?period=week&units=international_system&left_color=gray&right_color=orange&left_text=Downloads/week)](https://pepy.tech/project/autogen-oaiapi)
 
 OpenAI-style Chat API server for [AutoGen](https://github.com/microsoft/autogen) teams.  
 Deploy your own `/v1/chat/completions` endpoint using any AutoGen-compatible team configuration.
+
+🚀 **Try it? → Don’t forget to ⭐ the repo if useful!**
 
 ---
 
