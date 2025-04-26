@@ -78,7 +78,7 @@ class Model:
                 if isinstance(actor, BaseGroupChat):
                     self._register(name, actor, source_select, output_idx, termination_conditions=get_termination_conditions(actor._termination_condition))
                 elif isinstance(actor, BaseChatAgent):
-                    if output_idx is not None or output_idx != 0:
+                    if output_idx is not None and output_idx != 0:
                         # log warning
                         pass
                     self._register(name, actor, None, output_idx)
