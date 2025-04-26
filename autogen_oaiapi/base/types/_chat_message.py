@@ -117,3 +117,9 @@ class ChatCompletionStreamResponse(BaseModel):
     model: str
     choices: List[ChatCompletionStreamChoice]
     usage: Optional[UsageInfo] = None
+
+class ReturnMessage(BaseModel):
+    content: str
+    total_prompt_tokens: int | None = None
+    total_completion_tokens: int | None = None
+    total_tokens: int | None = None

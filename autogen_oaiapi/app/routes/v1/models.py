@@ -15,10 +15,13 @@ async def chat_completions(request: Request):
     Returns:
         ModelListResponse: The response containing the list of available models.
     """
+    server = request.app.state.server
+    model = server.model
     # In this case, we are just returning an empty list of models
     return ModelListResponse(
         object="list",
         data=[
-            ModelResponse(id="autogen", object="model", owned_by="autogen", created=0),
+            ModelResponse(id=name, object="model", owned_by="autogen", created=0)
+            for name in model.model_list
         ]
     )
