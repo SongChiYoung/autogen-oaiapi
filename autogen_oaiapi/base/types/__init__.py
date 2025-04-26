@@ -17,7 +17,7 @@ from ._response_and_resquset import (
 from ._session import (
     SessionContext,
 )
-from ._registy import (
+from ._registry import (
     Registry,
 )
 
