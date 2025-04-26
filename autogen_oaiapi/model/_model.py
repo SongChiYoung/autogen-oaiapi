@@ -73,20 +73,22 @@ class Model:
             output_idx = 0
         if actor is None:
             # If no actor is provided, return a decorator
-            def decorator(actor: BaseGroupChat | BaseChatAgent) -> None:
+            def decorator(builder) -> None:
+                actor = builder()
                 if isinstance(actor, BaseGroupChat):
-                    self._register(name, actor, source_select, output_idx, termination_conditions=get_termination_conditions(actor.termination_condition))
+                    self._register(name, actor, source_select, output_idx, termination_conditions=get_termination_conditions(actor._termination_condition))
                 elif isinstance(actor, BaseChatAgent):
                     if output_idx is not None or output_idx != 0:
                         # log warning
                         pass
                     self._register(name, actor, None, output_idx)
                 else:
+                    print(actor)
                     raise TypeError("actor must be a AutoGen GroupChat(team) or Agent instance")
             return decorator
         else:
             # If an actor is provided, register it directly
-            self._register(name, actor, source_select, output_idx)
+            self._register(name, actor, source_select, output_idx, termination_conditions=get_termination_conditions(actor._termination_condition))
 
     @property
     def model_list(self) -> List[str]:

@@ -38,8 +38,6 @@ class Server:
                 source_select=source_select,
                 output_idx=output_idx,
             )
-        else:
-            raise ValueError("Team must be provided")
 
         # Register routers, middlewares, and exception handlers
         register_routes(self.app, self)
