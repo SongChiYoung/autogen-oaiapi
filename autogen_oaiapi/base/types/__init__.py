@@ -7,7 +7,7 @@ from ._chat_message import (
     ChatCompletionStreamChoice,
     ChatCompletionResponseChoice,
     UsageInfo,
-
+    ReturnMessage,
 )
 from ._response_and_resquset import (
     ModelResponse,
@@ -16,6 +16,9 @@ from ._response_and_resquset import (
 )
 from ._session import (
     SessionContext,
+)
+from ._registy import (
+    Registry,
 )
 
 
@@ -28,8 +31,10 @@ __all__ = [
     "ChatCompletionStreamChoice",
     "ChatCompletionResponseChoice",
     "UsageInfo",
+    "ReturnMessage",
     "ModelResponse",
     "ModelListResponse",
     "ModelListRequest",
     "SessionContext",
+    "Registry",
 ]
