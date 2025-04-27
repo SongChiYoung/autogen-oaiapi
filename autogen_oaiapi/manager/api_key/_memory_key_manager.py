@@ -1,6 +1,6 @@
 import json
 from ...base import BaseKeyManager
-from ...base import BaseKeyManager, DefaultAPIKeyStore
+from ...base import DefaultAPIKeyStore
 
 
 class MemoryKeyManager(BaseKeyManager):
