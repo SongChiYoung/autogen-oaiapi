@@ -81,7 +81,7 @@ class DefaultAPIKeyStore(BaseAPIKeyStore):
         if key_name in self._api_keys:
             self._api_keys[key_name].is_active = is_active
 
-    def get_all_api_key_entries(self) -> List[Sequence[str,APIKeyEntry]]:
+    def get_all_api_key_entries(self) -> List[Dict[str,APIKeyEntry]]:
         return list(self._api_keys.items())
 
 

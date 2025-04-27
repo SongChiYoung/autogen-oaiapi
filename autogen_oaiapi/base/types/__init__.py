@@ -21,10 +21,6 @@ from ._registry import (
     Registry,
     TOTAL_MODELS_NAME,
 )
-from ._api_key import (
-    APIKeyEntry,
-    APIKeyStore,
-)
 
 __all__ = [
     "ChatCompletionRequest",
@@ -42,6 +38,4 @@ __all__ = [
     "SessionContext",
     "Registry",
     "TOTAL_MODELS_NAME",
-    "APIKeyEntry",
-    "APIKeyStore",
 ]
