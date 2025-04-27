@@ -56,8 +56,8 @@ class APIKeyModelMiddleware(BaseHTTPMiddleware):
                         code="invalid_api_key"
                     )
                 )
-                return JSONResponse(status_code=403, content=content)
-
+                return JSONResponse(status_code=403, content=content.model_dump(exclude_none=False))
+                
             if request.method == "POST":
                 body = await request.json()
                 requested_model = body.get("model")
@@ -71,7 +71,7 @@ class APIKeyModelMiddleware(BaseHTTPMiddleware):
                                 code="model_not_found"
                             )
                         )
-                        return JSONResponse(status_code=403, content=content)
+                        return JSONResponse(status_code=403, content=content.model_dump(exclude_none=False))
                 else:
                     content = ChatCompletionErrorResponse(
                         error=ChatCompletionErrorDetail(
@@ -81,7 +81,7 @@ class APIKeyModelMiddleware(BaseHTTPMiddleware):
                             code="model_not_found"
                         )
                     )
-                    return JSONResponse(status_code=400, content=content)
+                    return JSONResponse(status_code=400, content=content.model_dump(exclude_none=False))
 
             request.state.api_key = api_key
         return await call_next(request)
