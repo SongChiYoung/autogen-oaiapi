@@ -9,3 +9,6 @@ class Registry(BaseModel):
     output_idx: int | None = None
     type: Literal["agent", "team"]
     termination_conditions: Sequence[str] = []
+
+
+TOTAL_MODELS_NAME = "*"

@@ -13,7 +13,7 @@ from autogen_agentchat.conditions import (
 
 from autogen_agentchat.base import TaskResult
 
-from ..base.types import Registry, ChatMessage, ReturnMessage
+from ..base.types import Registry, ChatMessage, ReturnMessage, TOTAL_MODELS_NAME
 from ..message import return_last_message
 
 
@@ -67,6 +67,9 @@ class Model:
         output_idx: int | None = None,
         actor: BaseGroupChat | BaseChatAgent | None = None,
     ) -> None:
+        if name == TOTAL_MODELS_NAME:
+            # log, now allowed name
+            return
         if source_select is not None and output_idx is not None:
             raise ValueError("source_select and output_idx cannot be used together")
         if source_select is None and output_idx is None:

@@ -1,0 +1,10 @@
+{
+    "keys": {
+        "key1": {
+            "api_key": "autogen-oaiapi-key-24923889-f814-45ea-af2b-d4e51d831da6",
+            "allowed_models": ["TEST_TEAM"],
+            "is_active": true,
+            "description": "Key for user A"
+        }
+    }
+}

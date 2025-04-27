@@ -19,6 +19,10 @@ Deploy your own `/v1/chat/completions` endpoint using any AutoGen-compatible tea
 
 
 ---
+## WARNING
+### NOW(autogen-agentchat == 0.5.5) limit supported. 
+> Because of it has bug on deserialization `AssistantAgent` with tools.
+
 
 ## ✨ Features
 
@@ -130,6 +134,13 @@ def build_team():
 
 server.run(port=8001)
 ```
+
+**Look at the `example` folder include more examples!**
+- simmple example
+- function style register example
+- decorator sytle register example
+- JSON file style api_key register example
+- Memory style api_key register example
 
 ---
 
