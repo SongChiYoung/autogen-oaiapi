@@ -104,8 +104,7 @@ def return_last_message(
         content = result_message.to_text()
 
     if not content:
-        content = "somthing went wrong, please try again."
-
+        content = "something went wrong, please try again."
     return content, total_prompt_tokens, total_completion_tokens, total_tokens
 
 
