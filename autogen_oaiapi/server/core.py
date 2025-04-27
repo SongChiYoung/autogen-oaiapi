@@ -7,6 +7,8 @@ from autogen_oaiapi.app.exception_handlers import register_exception_handlers
 from autogen_oaiapi.session_manager.memory import InMemorySessionStore
 from autogen_oaiapi.session_manager.base import BaseSessionStore
 from autogen_oaiapi.model import Model
+from autogen_oaiapi.base import BaseKeyManager
+from autogen_oaiapi.manager.api_key._non_key_manager import NonKeyManager
 from autogen_agentchat.conditions import TextMentionTermination
 from autogen_agentchat.base import AndTerminationCondition, OrTerminationCondition
 
@@ -20,15 +22,18 @@ class Server:
         source_select (str | None): Name of the agent whose output should be selected.
         session_store (BaseSessionStore | None): Custom session store backend. Defaults to in-memory.
     """
-    def __init__(self, team=None, output_idx:int|None = None, source_select:str|None = None, session_store: Optional[BaseSessionStore] = None):
-        self.session_store = session_store or InMemorySessionStore()
-        # self.team_type = type(team)
-        # self.team_dump = team.dump_component()
-        # self.output_idx = output_idx
-        # self.source_select = source_select
+    def __init__(
+            self,
+            team=None,
+            output_idx:int|None = None,
+            source_select:str|None = None,
+            key_manager:BaseKeyManager = None,
+            session_store: Optional[BaseSessionStore] = None
+        ):
+        self._session_store = session_store or InMemorySessionStore()
+        self._key_manager = key_manager or NonKeyManager()
         self._model = Model()
         self.app = FastAPI()
-        self.terminate_messages = []
 
         # Register the team with the model
         if team is not None:
@@ -54,6 +59,25 @@ class Server:
         """
         return self._model
         
+    @property
+    def session_store(self):
+        """
+        Get the session store instance.
+
+        Returns:
+            BaseSessionStore: The session store instance.
+        """
+        return self._session_store
+    
+    @property
+    def key_manager(self):
+        """
+        Get the key manager instance.
+
+        Returns:
+            BaseKeyManager: The key manager instance.
+        """
+        return self._key_manager
 
     def run(self, host="0.0.0.0", port=8000):
         """
