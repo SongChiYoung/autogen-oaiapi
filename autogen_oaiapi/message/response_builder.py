@@ -104,7 +104,7 @@ def return_last_message(
     return content, total_prompt_tokens, total_completion_tokens, total_tokens
 
 
-async def build_openai_response(model_name, result, is_stream=False):
+async def build_openai_response(model_name, result, is_stream=False) -> ChatCompletionResponse | AsyncGenerator[str, None] | None:
     """
     Build a response compatible with the OpenAI ChatCompletion API.
 
@@ -114,7 +114,7 @@ async def build_openai_response(model_name, result, is_stream=False):
         is_stream (bool, optional): Whether to stream the response. Defaults to False.
 
     Returns:
-        ChatCompletionResponse | AsyncGenerator | None: The response object or async generator for streaming.
+        ChatCompletionResponse | AsyncGenerator : The response object or async generator for streaming.
 
     Raises:
         ValueError: If both idx and source are provided.

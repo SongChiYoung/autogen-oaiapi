@@ -1,10 +1,11 @@
-from autogen_core.models import UserMessage, AssistantMessage, SystemMessage
+from typing import List
 from autogen_agentchat.messages import (
-    TextMessage
+    TextMessage,
+    ChatMessage,
 )
-from autogen_oaiapi.base.types import ChatMessage
+from autogen_oaiapi.base.types import ChatMessage as _ChatMessage  # ToDo: Change name
 
-def convert_to_llm_messages(messages: list[ChatMessage]):
+def convert_to_llm_messages(messages: List[_ChatMessage]) -> List[ChatMessage]:
     """
     Convert a list of ChatMessage objects to LLM-compatible TextMessage objects.
 
@@ -14,12 +15,8 @@ def convert_to_llm_messages(messages: list[ChatMessage]):
     Returns:
         list[TextMessage]: List of converted TextMessage objects for LLM processing.
     """
-    converted = []
+    converted: List[ChatMessage] = []
     for m in messages:
-        if m.role == "user":
-            converted.append(TextMessage(content=m.content, source="user"))
-        elif m.role == "assistant":
-            converted.append(TextMessage(content=m.content, source="assistant"))
-        elif m.role == "system":
-            converted.append(TextMessage(content=m.content, source="system"))
+        if m.content:
+            converted.append(TextMessage(content=m.content, source=m.role))
     return converted
