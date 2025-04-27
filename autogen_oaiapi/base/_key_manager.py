@@ -96,7 +96,7 @@ class BaseKeyManager(ABC):
 
     def set_allow_model(self, key_name:str, model:str) -> bool:
         """Set the list of allowed models."""
-        self._key_store.set_model_to_api_key(key_name, model)
+        return self._key_store.set_model_to_api_key(key_name, model)
 
     def set_api_key(self, key_name:str) -> str:
         """Set a new API key."""
