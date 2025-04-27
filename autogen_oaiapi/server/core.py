@@ -19,7 +19,7 @@ class Server:
         team: The team (e.g., GroupChat or SocietyOfMindAgent) to use for handling chat sessions.
         output_idx (int | None): Index of the output message to select (if applicable).
         source_select (str | None): Name of the agent whose output should be selected.
-        key_manager (BaseKeyManager): Custom key manager for API key management. Defaults to NonKeyManager. NonKeyManager is used for no key management.
+        key_manager (BaseKeyManager | None): Custom key manager for API key management. Defaults to NonKeyManager. NonKeyManager is used for no key management.
         session_store (BaseSessionStore | None): Custom session store backend. Defaults to in-memory.
     """
     def __init__(
