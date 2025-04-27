@@ -14,6 +14,9 @@ from autogen_oaiapi.base.types import (
 logger = logging.getLogger(__name__)
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
+    """
+    Middleware to add a unique request ID and process time to each request.
+    """
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         request_id = request.headers.get("x-request-id", str(uuid.uuid4()))
         request.state.request_id = request_id
@@ -30,6 +33,9 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
     
 
 class APIKeyModelMiddleware(BaseHTTPMiddleware):
+    """
+    Middleware to validate API key and model permissions.
+    """
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         if request.method == "OPTIONS":
             # CORS preflight does not auth test!

@@ -28,7 +28,7 @@ async def chat_completions(
         body (ChatCompletionRequest): The chat completion request payload.
 
     Returns:
-        ChatCompletionResponse | StreamingResponse | dict: The chat completion response, streaming response, or error dict.
+        ChatCompletionResponse | StreamingResponse | ChatCompletionErrorResponse: The chat completion response, streaming response, or error dict.
 
     Raises:
         500: If the completion or stream generation fails.

@@ -21,7 +21,7 @@ def clean_message(content:str, removers:Sequence[str]) -> str:
 
     Args:
         content (str): The message content to clean.
-        removers (list[str]): List of substrings to remove from the content.
+        removers (Sequence[str]): List of substrings to remove from the content.
 
     Returns:
         str: Cleaned message content.
@@ -77,6 +77,18 @@ def return_last_message(
         idx: int|None=None,
         terminate_texts: Sequence[str]|None=None
     ) -> tuple[str, int, int, int]:
+    """
+    Extract the last message from the result and calculate token usage.
+    Args:
+        result (TaskResult): The result object containing messages.
+        source (str, optional): Source identifier to filter messages. Defaults to None.
+        idx (int, optional): Index of the message to return. Defaults to None.
+        terminate_texts (Sequence[str], optional): List of substrings to remove from the message content. Defaults to None.
+    Returns:
+        tuple[str, int, int, int]: A tuple containing the last message content, prompt tokens, completion tokens, and total tokens.
+    Raises:
+        ValueError: If both idx and source are provided.
+    """
     total_prompt_tokens = 0
     total_completion_tokens = 0
 
@@ -118,7 +130,7 @@ async def build_openai_response(
 
     Args:
         model_name (str): Name of the model.
-        result: The result object or async generator from the team.
+        result (AsyncGenerator | Coroutine): The result object or async generator.
         is_stream (bool, optional): Whether to stream the response. Defaults to False.
 
     Returns:

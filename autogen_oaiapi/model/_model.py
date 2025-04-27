@@ -19,6 +19,13 @@ from ..message import return_last_message
 
 
 def get_termination_conditions(termination_condition: TerminationCondition) -> Sequence[str]:
+    """
+    Get the termination conditions from a TerminationCondition object.
+    Args:
+        termination_condition (TerminationCondition): The termination condition object.
+    Returns:
+        Sequence[str]: A list of termination conditions.
+    """
     if isinstance(termination_condition, str):
         return [termination_condition]
 
@@ -33,6 +40,10 @@ def get_termination_conditions(termination_condition: TerminationCondition) -> S
 
 
 class Model:
+    """
+    Model is a class that manages the registration and execution of AutoGen GroupChat and Agent instances.
+    It provides methods to register models, run them, and retrieve their results.
+    """
     def __init__(self) -> None:
         self._registry: Dict[str, Registry] = {}
 
@@ -44,6 +55,15 @@ class Model:
         output_idx: int | None = None,
         termination_conditions: Sequence[str] | None = None,
     ) -> None:
+        """
+        Register a model with the given name and actor.
+        Args:
+            name (str): The name of the model.
+            actor (BaseGroupChat | BaseChatAgent): The actor (GroupChat or Agent) to register.
+            source_select (str | None): The source select for the model.
+            output_idx (int | None): The output index for the model.
+            termination_conditions (Sequence[str] | None): The termination conditions for the model.
+        """
         actor_type: Literal["agent", "team"]
         if isinstance(actor, BaseGroupChat):
             actor_type = "team"
@@ -69,6 +89,16 @@ class Model:
         output_idx: int | None = None,
         actor: BaseGroupChat | BaseChatAgent | None = None,
     ) -> Callable[..., None]:
+        """
+        Register a model with the given name and actor.
+        Args:
+            name (str): The name of the model.
+            source_select (str | None): The source select for the model.
+            output_idx (int | None): The output index for the model.
+            actor (BaseGroupChat | BaseChatAgent | None): The actor (GroupChat or Agent) to register.
+        Returns:
+            Callable[..., None]: A decorator to register the model.
+        """
         if name == TOTAL_MODELS_NAME:
             # log, now allowed name
             raise ValueError(f"name cannot be '{TOTAL_MODELS_NAME}', please use a different name")
@@ -107,6 +137,16 @@ class Model:
 
     # @property
     def _get_actor(self, name: str) -> BaseGroupChat | BaseChatAgent:
+        """
+        Get the actor (GroupChat or Agent) by name.
+        Args:
+            name (str): The name of the model.
+        Returns:
+            BaseGroupChat | BaseChatAgent: The actor (GroupChat or Agent) instance.
+        Raises:
+            KeyError: If the model is not found in the registry.
+            TypeError: If the actor is not a valid GroupChat or Agent instance.
+        """
         dump = self._registry[name].actor
         if self._registry[name].type == "team":
             return BaseGroupChat.load_component(dump)
@@ -116,6 +156,14 @@ class Model:
             raise TypeError("actor must be a AutoGen GroupChat(team) or Agent instance")
         
     async def run_stream(self, name: str, messages: Sequence[ChatMessage]) -> AsyncGenerator[ReturnMessage, None]:
+        """
+        Run the model with the given name and messages, streaming the results.
+        Args:
+            name (str): The name of the model.
+            messages (Sequence[ChatMessage]): The messages to send to the model.
+        Yields:
+            AsyncGenerator[ReturnMessage, None]: The streamed results from the model.
+        """
         actor = self._get_actor(name)
         len_messages = len(messages)
         message_count = 0
@@ -155,6 +203,16 @@ class Model:
                 )
     
     async def run(self, name: str, messages: List[ChatMessage]) -> ReturnMessage:
+        """
+        Run the model with the given name and messages, returning the result.
+        Args:
+            name (str): The name of the model.
+            messages (List[ChatMessage]): The messages to send to the model.
+        Returns:
+            ReturnMessage: The result from the model.
+        Raises:
+            TypeError: If the actor is not a valid GroupChat or Agent instance.
+        """
         actor = self._get_actor(name)
         message = ReturnMessage(content="Something went wrong, please try again.", total_completion_tokens=0, total_prompt_tokens=0, total_tokens=0)
         if isinstance(actor, BaseGroupChat):
