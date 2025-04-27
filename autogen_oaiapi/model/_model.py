@@ -156,7 +156,7 @@ class Model:
     
     async def run(self, name: str, messages: List[ChatMessage]) -> ReturnMessage:
         actor = self._get_actor(name)
-        message = ReturnMessage(content="Somthing went wrong, please try again.", total_completion_tokens=0, total_prompt_tokens=0, total_tokens=0)
+        message = ReturnMessage(content="Something went wrong, please try again.", total_completion_tokens=0, total_prompt_tokens=0, total_tokens=0)
         if isinstance(actor, BaseGroupChat):
             async for message in self.run_stream(name, messages):
                 continue
