@@ -2,7 +2,7 @@ import itertools
 from typing import Optional
 from fastapi import FastAPI
 from autogen_oaiapi.app.router import register_routes
-from autogen_oaiapi.app.middleware import RequestContextMiddleware
+from autogen_oaiapi.app.middleware import RequestContextMiddleware, APIKeyModelMiddleware
 from autogen_oaiapi.app.exception_handlers import register_exception_handlers
 from autogen_oaiapi.session_manager.memory import InMemorySessionStore
 from autogen_oaiapi.session_manager.base import BaseSessionStore
@@ -20,6 +20,7 @@ class Server:
         team: The team (e.g., GroupChat or SocietyOfMindAgent) to use for handling chat sessions.
         output_idx (int | None): Index of the output message to select (if applicable).
         source_select (str | None): Name of the agent whose output should be selected.
+        key_manager (BaseKeyManager): Custom key manager for API key management. Defaults to NonKeyManager. NonKeyManager is used for no key management.
         session_store (BaseSessionStore | None): Custom session store backend. Defaults to in-memory.
     """
     def __init__(
@@ -46,6 +47,7 @@ class Server:
 
         # Register routers, middlewares, and exception handlers
         register_routes(self.app, self)
+        self.app.add_middleware(APIKeyModelMiddleware)
         self.app.add_middleware(RequestContextMiddleware)
         register_exception_handlers(self.app)
 
