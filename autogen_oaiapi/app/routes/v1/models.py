@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Request
-from autogen_oaiapi.base.types import ModelResponse, ModelListRequest, ModelListResponse
+from autogen_oaiapi.base.types import ModelResponse, ModelListResponse
+
 
 router = APIRouter()
 
 @router.get("/models", response_model=ModelListResponse)
-async def chat_completions(request: Request):
+async def chat_completions(request: Request) -> ModelListResponse:
     """
     Handle the OPTIONS request for the /chat/completions/models endpoint.
     Returns a list of available models.

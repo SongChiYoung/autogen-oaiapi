@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import List, Optional
-from autogen_oaiapi.base.types._chat_message import ChatMessage
+from autogen_oaiapi.base.types._chat_message import ChatCompletionMessage
 
 
 class ModelResponse(BaseModel):
@@ -44,7 +44,7 @@ class ModelListRequest(BaseModel):
         max_tokens (int, optional): Maximum number of tokens.
     """
     model: str
-    messages: List[ChatMessage]
+    messages: List[ChatCompletionMessage]
     stream: Optional[bool] = False
     temperature: Optional[float] = 0.7
     top_p: Optional[float] = 1.0

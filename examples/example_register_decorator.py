@@ -1,13 +1,13 @@
 from autogen_oaiapi.server import Server
 from autogen_agentchat.agents import AssistantAgent
-from autogen_agentchat.teams import RoundRobinGroupChat
+from autogen_agentchat.teams import RoundRobinGroupChat, BaseGroupChat
 from autogen_ext.models.openai import OpenAIChatCompletionClient
-from autogen_agentchat.conditions import MaxMessageTermination, TextMentionTermination
+from autogen_agentchat.conditions import TextMentionTermination
 
 server = Server()
 
 @server.model.register(name="TEST_TEAM_DECORATOR", source_select="writer")
-def build_team():
+def build_team() -> BaseGroupChat:
     client = OpenAIChatCompletionClient(
         model="gpt-4.1-nano"
     )

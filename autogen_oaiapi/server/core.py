@@ -1,4 +1,3 @@
-import itertools
 from typing import Optional
 from fastapi import FastAPI
 from autogen_oaiapi.app.router import register_routes
@@ -9,8 +8,8 @@ from autogen_oaiapi.session_manager.base import BaseSessionStore
 from autogen_oaiapi.model import Model
 from autogen_oaiapi.base import BaseKeyManager
 from autogen_oaiapi.manager.api_key._non_key_manager import NonKeyManager
-from autogen_agentchat.conditions import TextMentionTermination
-from autogen_agentchat.base import AndTerminationCondition, OrTerminationCondition
+from autogen_agentchat.teams import BaseGroupChat
+from autogen_agentchat.agents import BaseChatAgent
 
 class Server:
     """
@@ -25,10 +24,10 @@ class Server:
     """
     def __init__(
             self,
-            team=None,
+            team: BaseGroupChat | BaseChatAgent | None=None,
             output_idx:int|None = None,
             source_select:str|None = None,
-            key_manager:BaseKeyManager = None,
+            key_manager:BaseKeyManager|None = None,
             session_store: Optional[BaseSessionStore] = None
         ):
         self._session_store = session_store or InMemorySessionStore()
@@ -46,13 +45,16 @@ class Server:
             )
 
         # Register routers, middlewares, and exception handlers
-        register_routes(self.app, self)
+        register_routes(self.app)
+        # server is passed to the app state for access in routes
+        self.app.state.server = self
+
         self.app.add_middleware(APIKeyModelMiddleware)
         self.app.add_middleware(RequestContextMiddleware)
         register_exception_handlers(self.app)
 
     @property
-    def model(self):
+    def model(self) -> Model:
         """
         Get the model instance.
 
@@ -62,7 +64,7 @@ class Server:
         return self._model
         
     @property
-    def session_store(self):
+    def session_store(self) -> BaseSessionStore:
         """
         Get the session store instance.
 
@@ -72,7 +74,7 @@ class Server:
         return self._session_store
     
     @property
-    def key_manager(self):
+    def key_manager(self) -> BaseKeyManager:
         """
         Get the key manager instance.
 
@@ -81,7 +83,7 @@ class Server:
         """
         return self._key_manager
 
-    def run(self, host="0.0.0.0", port=8000):
+    def run(self, host:str="0.0.0.0", port:int=8000) -> None:
         """
         Start the FastAPI server using Uvicorn.
 

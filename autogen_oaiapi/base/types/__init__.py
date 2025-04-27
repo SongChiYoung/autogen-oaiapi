@@ -1,7 +1,9 @@
 from ._chat_message import (
     ChatCompletionRequest,
     ChatCompletionResponse,
-    ChatMessage,
+    ChatCompletionMessage,
+    ChatCompletionErrorDetail,
+    ChatCompletionErrorResponse,
     DeltaMessage,
     ChatCompletionStreamResponse,
     ChatCompletionStreamChoice,
@@ -25,7 +27,9 @@ from ._registry import (
 __all__ = [
     "ChatCompletionRequest",
     "ChatCompletionResponse",
-    "ChatMessage",
+    "ChatCompletionMessage",
+    "ChatCompletionErrorDetail",
+    "ChatCompletionErrorResponse",
     "DeltaMessage",
     "ChatCompletionStreamResponse",
     "ChatCompletionStreamChoice",

@@ -34,7 +34,79 @@ dependencies = [
   "autogen-agentchat>=0.5.1",
 ]
 
+[project.optional-dependencies]
+dev = [
+  "pytest",
+  "pytest-asyncio",
+  "pytest-cov",
+  "pytest-xdist",
+  "pyright==1.1.389",
+  "mypy==1.13.0",
+  "ruff==0.4.8",
+  "poethepoet",
+  "rich",
+  "typer",
+  "polars",
+  "pytest_mock",
+  "packaging",
+  "grpcio-tools~=1.70.0",
+  "mypy-protobuf",
+  "cookiecutter",
+  "tomli",
+  "tomli-w",
+  "chainlit",
+  "streamlit",
+  "playwright",
+  "build", 
+  "twine",
+]
+
 [project.urls]
 Homepage = "https://github.com/SongChiYoung/autogen-oaiapi"
 Repository = "https://github.com/SongChiYoung/autogen-oaiapi"
 Issues = "https://github.com/SongChiYoung/autogen-oaiapi/issues"
+
+[tool.mypy]
+python_version = "3.10"
+mypy_path = "autogen_oaiapi"
+strict = true
+ignore_missing_imports = true
+
+# from https://blog.wolt.com/engineering/2021/09/30/professional-grade-mypy-configuration/
+disallow_untyped_defs = true
+no_implicit_optional = true
+check_untyped_defs = true
+warn_return_any = true
+show_error_codes = true
+warn_unused_ignores = false
+
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+disallow_any_unimported = true
+
+[tool.pyright]
+include = ["autogen_oaiapi", "examples"]
+typeCheckingMode = "strict"
+reportUnnecessaryIsInstance = false
+reportMissingTypeStubs = false
+
+[tool.ruff]
+line-length = 120
+fix = true
+target-version = "py310"
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "Q", "I", "ASYNC", "T20"]
+ignore = ["F401", "E501"]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"unittest".msg = "Use `pytest` instead."
+
+[tool.poe.tasks]
+check = { sequence = ["pyright", "mypy", "test"], help = "Run pyright then pytest" }
+pyright = { shell = "pyright" }
+mypy = { shell = "mypy autogen_oaiapi examples", help = "Run mypy type checks" }
+test = { shell = "pytest" }
