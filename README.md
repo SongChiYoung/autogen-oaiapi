@@ -19,7 +19,7 @@ Deploy your own `/v1/chat/completions` endpoint using any AutoGen-compatible tea
 
 
 ---
-## WRRNING
+## WARNING
 ### NOW(autogen-agentchat == 0.5.5) limit supported. 
 > Because of it has bug on deserialization `AssistantAgent` with tools.
 
