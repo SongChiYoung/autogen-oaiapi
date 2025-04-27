@@ -15,7 +15,7 @@ from autogen_oaiapi.base.types import (
     ReturnMessage,
 )
 
-def clean_message(content, removers):
+def clean_message(content:str, removers:list[str]) -> str:
     """
     Remove specified substrings and default markers from the message content.
 
@@ -28,16 +28,22 @@ def clean_message(content, removers):
     """
     for remover in removers:
         content = content.replace(remover, "")
+
     content = (
-                content
-                .replace("TERMINATE", "") # default terminate text
-                .replace("<think>", "") # default think text
-                .replace("</think>", "") # default think text
+        content
+        .replace("TERMINATE", "") # default terminate text
+        .replace("<think>", "") # default think text
+        .replace("</think>", "") # default think text
     )
     return content
         
 
-async def build_content_chunk(request_id, model_name, content, finish_reason=None):
+async def build_content_chunk(
+        request_id: str,
+        model_name: str,
+        content: str,
+        finish_reason: str|None=None,
+    ):
     """
     Build a ChatCompletionStreamResponse chunk for streaming responses.
 
@@ -65,7 +71,12 @@ async def build_content_chunk(request_id, model_name, content, finish_reason=Non
     return content_chunk
 
 
-def return_last_message(result, source=None, idx=None, terminate_texts=None):
+def return_last_message(
+        result,
+        source=None,
+        idx=None,
+        terminate_texts=None
+    ):
     total_prompt_tokens = 0
     total_completion_tokens = 0
 

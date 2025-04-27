@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Literal, Sequence, TypeVar, Generic
+from typing import Literal, Sequence
 from autogen_core import ComponentModel
 
 class Registry(BaseModel):

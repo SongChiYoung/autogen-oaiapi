@@ -25,7 +25,7 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
     server = request.app.state.server
     llm_messages = convert_to_llm_messages(body.messages)
     request_model = body.model
-    is_stream = body.stream
+    is_stream: bool = body.stream or False
     
     if request_model is None:
         request_model = "autogen-baseteam"

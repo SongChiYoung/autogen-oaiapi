@@ -1,9 +1,11 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from autogen_oaiapi.app.routes.v1.chat import router as chat_router
 from autogen_oaiapi.app.routes.v1.models import router as models_router
+from autogen_oaiapi.server import Server  # Assuming Server type is defined here or imported
 
-def register_routes(app, server):
+def register_routes(app: FastAPI, server: Server) -> None:
+    """Register API routes for the FastAPI application."""
     api_router = APIRouter()
     api_router.include_router(chat_router, prefix="/v1")
     api_router.include_router(models_router, prefix="/v1")

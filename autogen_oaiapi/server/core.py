@@ -1,93 +1,87 @@
-import itertools
-from typing import Optional
+import logging
+from typing import Any, Optional, Union
+
+import uvicorn
 from fastapi import FastAPI
+
 from autogen_oaiapi.app.router import register_routes
-from autogen_oaiapi.app.middleware import RequestContextMiddleware, APIKeyModelMiddleware
+from autogen_oaiapi.app.middleware import register_middlewares
 from autogen_oaiapi.app.exception_handlers import register_exception_handlers
-from autogen_oaiapi.session_manager.memory import InMemorySessionStore
-from autogen_oaiapi.session_manager.base import BaseSessionStore
-from autogen_oaiapi.model import Model
-from autogen_oaiapi.base import BaseKeyManager
-from autogen_oaiapi.manager.api_key._non_key_manager import NonKeyManager
-from autogen_agentchat.conditions import TextMentionTermination
-from autogen_agentchat.base import AndTerminationCondition, OrTerminationCondition
+from autogen_oaiapi.base import BaseKeyManager, BaseSessionStore
+from autogen_oaiapi.manager import JsonAPIKeyManager, MemorySessionStore
+from autogen_oaiapi.model import ModelClient
+from autogen_agentchat.agents import BaseChatAgent
+from autogen_agentchat.teams import BaseGroupChat
+
+ActorType = Union[BaseChatAgent, BaseGroupChat]
 
 class Server:
     """
     OpenAI-compatible API server for AutoGen teams.
 
     Args:
-        team: The team (e.g., GroupChat or SocietyOfMindAgent) to use for handling chat sessions.
-        output_idx (int | None): Index of the output message to select (if applicable).
-        source_select (str | None): Name of the agent whose output should be selected.
-        key_manager (BaseKeyManager): Custom key manager for API key management. Defaults to NonKeyManager. NonKeyManager is used for no key management.
+        team (ActorType | None): The team (e.g., GroupChat or SocietyOfMindAgent) to use for handling chat sessions.
+        key_manager (BaseKeyManager | None): Custom key manager for API key management. Defaults to JsonAPIKeyManager.
         session_store (BaseSessionStore | None): Custom session store backend. Defaults to in-memory.
+        model_client (ModelClient | None): Custom model client. Defaults to ModelClient.
     """
     def __init__(
-            self,
-            team=None,
-            output_idx:int|None = None,
-            source_select:str|None = None,
-            key_manager:BaseKeyManager = None,
-            session_store: Optional[BaseSessionStore] = None
-        ):
-        self._session_store = session_store or InMemorySessionStore()
-        self._key_manager = key_manager or NonKeyManager()
-        self._model = Model()
+        self,
+        team: Optional[ActorType] = None,
+        key_manager: Optional[BaseKeyManager] = None,
+        session_store: Optional[BaseSessionStore] = None,
+        model_client: Optional[ModelClient] = None,
+    ) -> None:
+        self.key_manager: BaseKeyManager = key_manager if key_manager else JsonAPIKeyManager()
+        self.session_store: BaseSessionStore = session_store if session_store else MemorySessionStore()
+        self.model: ModelClient = model_client if model_client else ModelClient()
+
+        if team:
+            self.model.register(actor=team, name=self.model.default_model_name)
+
         self.app = FastAPI()
 
-        # Register the team with the model
-        if team is not None:
-            self._model.register(
-                name="autogen-baseteam",
-                actor=team,
-                source_select=source_select,
-                output_idx=output_idx,
-            )
-
-        # Register routers, middlewares, and exception handlers
-        register_routes(self.app, self)
-        self.app.add_middleware(APIKeyModelMiddleware)
-        self.app.add_middleware(RequestContextMiddleware)
+        register_middlewares(self.app)
         register_exception_handlers(self.app)
+        register_routes(self.app, self)
 
     @property
-    def model(self):
+    def model(self) -> ModelClient:
         """
         Get the model instance.
 
         Returns:
-            Model: The model instance.
+            ModelClient: The model instance.
         """
-        return self._model
+        return self.model
         
     @property
-    def session_store(self):
+    def session_store(self) -> BaseSessionStore:
         """
         Get the session store instance.
 
         Returns:
             BaseSessionStore: The session store instance.
         """
-        return self._session_store
+        return self.session_store
     
     @property
-    def key_manager(self):
+    def key_manager(self) -> BaseKeyManager:
         """
         Get the key manager instance.
 
         Returns:
             BaseKeyManager: The key manager instance.
         """
-        return self._key_manager
+        return self.key_manager
 
-    def run(self, host="0.0.0.0", port=8000):
+    def run(self, host: str = "0.0.0.0", port: int = 8001, **kwargs: Any) -> None:
         """
         Start the FastAPI server using Uvicorn.
 
         Args:
             host (str): Host address to bind. Defaults to "0.0.0.0".
-            port (int): Port number. Defaults to 8000.
+            port (int): Port number. Defaults to 8001.
         """
-        import uvicorn
-        uvicorn.run(self.app, host=host, port=port)
+        logging.info(f"Starting AutoGen OAIAPI server on {host}:{port}")
+        uvicorn.run(self.app, host=host, port=port, **kwargs)

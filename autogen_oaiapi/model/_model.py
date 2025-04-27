@@ -1,176 +1,116 @@
-import itertools
-from typing import Dict, List, Literal, cast, AsyncGenerator, Sequence
-from autogen_agentchat.teams import BaseGroupChat
+import asyncio
+from typing import Any, Callable, Dict, List, Optional, Union, AsyncGenerator, Sequence
+
+from autogen_core.common import TaskResult, BaseActor, BaseAgent
+from autogen_core.registration import RegisteredActor
 from autogen_agentchat.agents import BaseChatAgent
-from autogen_agentchat.base import (
-    TerminationCondition,
-    AndTerminationCondition,
-    OrTerminationCondition,
-)
-from autogen_agentchat.conditions import (
-    TextMentionTermination,
-)
+from autogen_agentchat.teams import BaseGroupChat
+from autogen_agentchat.conditions import TerminationCondition, get_termination_conditions, BaseTerminationCondition
+from autogen_oaiapi.openai_types import ChatMessage
+from autogen_oaiapi.message import return_last_message, ReturnMessage
+from autogen_oaiapi.base.types import ModelInfo, ModelRegistry
 
-from autogen_agentchat.base import TaskResult
+ActorType = Union[BaseChatAgent, BaseGroupChat]
+BuilderType = Callable[[], ActorType]
 
-from ..base.types import Registry, ChatMessage, ReturnMessage, TOTAL_MODELS_NAME
-from ..message import return_last_message
+class ModelClient(ModelRegistry):
+    def __init__(self, default_model_name: str = "autogen-baseteam") -> None:
+        super().__init__()
+        self.default_model_name = default_model_name
 
+    def _get_actor(self, name: str) -> ActorType:
+        actor_info = self._models.get(name)
+        if not actor_info:
+            raise ValueError(f"Model {name} is not registered.")
+        return actor_info.builder()
 
-def get_termination_conditions(termination_condition: TerminationCondition) -> Sequence[str]:
-    if isinstance(termination_condition, str):
-        return [termination_condition]
+    def _get_termination_texts(self, actor: ActorType) -> List[str]:
+        term_cond: Optional[BaseTerminationCondition] = getattr(actor, "termination_condition", None)
+        texts: List[str] = []
+        if isinstance(term_cond, BaseTerminationCondition):
+            conditions: List[BaseTerminationCondition] = get_termination_conditions(term_cond)
+            for cond in conditions:
+                text = getattr(cond, "_termination_text", None)
+                if isinstance(text, str):
+                    texts.append(text)
+        return texts
 
-    if isinstance(termination_condition, TextMentionTermination):
-        return [termination_condition._termination_text]
-    
-    if isinstance(termination_condition, OrTerminationCondition) or isinstance(termination_condition, AndTerminationCondition):
-        _termination_conditions = [get_termination_conditions(condition) for condition in termination_condition._conditions]
-        return list(itertools.chain.from_iterable(_termination_conditions))
-    
-    return []
-
-
-class Model:
-    def __init__(self):
-        self._registry: Dict[str, Registry] = {}
-
-    def _register(
-        self,
-        name: str,
-        actor: BaseGroupChat | BaseChatAgent,
-        source_select: str | None = None,
-        output_idx: int | None = None,
-        termination_conditions: Sequence[str] | None = None,
-    ) -> None:
-        if isinstance(actor, BaseGroupChat):
-            actor_type = "team"
-        elif isinstance(actor, BaseChatAgent):
-            actor_type = "agent"
-        else:
-            raise TypeError("actor must be a AutoGen GroupChat(team) or Agent instance")
-        
-        registry = Registry(
-            name=name,
-            actor=actor.dump_component(),
-            type=actor_type,
-            source_select=source_select,
-            output_idx=output_idx,
-            termination_conditions=termination_conditions or [],
-        )
-        self._registry[name] = registry
-
-    def register(
-        self,
-        name: str,
-        source_select: str | None = None,
-        output_idx: int | None = None,
-        actor: BaseGroupChat | BaseChatAgent | None = None,
-    ) -> None:
-        if name == TOTAL_MODELS_NAME:
-            # log, now allowed name
+    def register(self, actor: ActorType, **kwargs: Any) -> None:
+        actor_name = getattr(actor, 'name', None)
+        if not actor_name:
+            print("Warning: Actor provided to register() has no 'name' attribute. Skipping registration.")
             return
-        if source_select is not None and output_idx is not None:
-            raise ValueError("source_select and output_idx cannot be used together")
-        if source_select is None and output_idx is None:
-            output_idx = 0
-        if actor is None:
-            # If no actor is provided, return a decorator
-            def decorator(builder) -> None:
-                actor = builder()
-                if isinstance(actor, BaseGroupChat):
-                    self._register(name, actor, source_select, output_idx, termination_conditions=get_termination_conditions(actor._termination_condition))
-                elif isinstance(actor, BaseChatAgent):
-                    if output_idx is not None and output_idx != 0:
-                        # log warning
-                        pass
-                    self._register(name, actor, None, output_idx)
+
+        termination_texts = self._get_termination_texts(actor)
+        builder: BuilderType = lambda: actor
+        model_info = ModelInfo(name=actor_name, builder=builder, termination_texts=termination_texts, **kwargs)
+        self._models[actor_name] = model_info
+
+    def register_model_info(self, name: str, builder: BuilderType, **kwargs: Any) -> None:
+        termination_texts: List[str] = []
+        try:
+            actor_instance = builder()
+            termination_texts = self._get_termination_texts(actor_instance)
+            del actor_instance
+        except Exception as e:
+            print(f"Warning: Could not determine termination texts for {name}: {e}")
+
+        model_info = ModelInfo(name=name, builder=builder, termination_texts=termination_texts, **kwargs)
+        self._models[name] = model_info
+
+    def run_stream(self, messages: List[ChatMessage], name: Optional[str] = None) -> AsyncGenerator[Union[str, TaskResult], None]:
+        model_name = name or self.default_model_name
+        actor = self._get_actor(model_name)
+        termination_texts = self._models[model_name].termination_texts
+
+        async def stream_output() -> AsyncGenerator[Union[str, TaskResult], None]:
+            final_result: Optional[TaskResult] = None
+            if hasattr(actor, "run_stream") and callable(actor.run_stream):
+                task_input: Union[str, Sequence[Dict[str, Any]]]
+                if len(messages) > 0:
+                    task_input = [{'role': msg.role, 'content': msg.content or ""} for msg in messages]
                 else:
-                    print(actor)
-                    raise TypeError("actor must be a AutoGen GroupChat(team) or Agent instance")
-            return decorator
-        else:
-            # If an actor is provided, register it directly
-            self._register(name, actor, source_select, output_idx, termination_conditions=get_termination_conditions(actor._termination_condition))
+                    task_input = ""
 
-    @property
-    def model_list(self) -> List[str]:
-        """
-        Get the list of registered models.
-
-        Returns:
-            List[str]: List of model names.
-        """
-        return list(self._registry.keys())
-
-    # @property
-    def _get_actor(self, name) -> BaseGroupChat | BaseChatAgent:
-        dump = self._registry[name].actor
-        if self._registry[name].type == "team":
-            return BaseGroupChat.load_component(dump)
-        elif self._registry[name].type == "agent":
-            return BaseChatAgent.load_component(dump)
-        else:
-            raise TypeError("actor must be a AutoGen GroupChat(team) or Agent instance")
-        
-    async def run_stream(self, name: str, messages: List[ChatMessage]) -> AsyncGenerator[ReturnMessage, None]:
-        actor = self._get_actor(name)
-        len_messages = len(messages)
-        message_count = 0
-        if isinstance(actor, BaseGroupChat):
-            yield ReturnMessage(content="<think>")
-
-        async for message in actor.run_stream(task=messages):
-            if len_messages > message_count:
-                message_count += 1
-                continue
-            if hasattr(message, "content") and message.content:
-                yield ReturnMessage(content=f"## [{message.source}]\n\n" + message.to_text())
-        else:
-            if isinstance(actor, BaseGroupChat):
-                yield ReturnMessage(content="</think>")
-            # at that point, the message is a TaskResult
-            if isinstance(message, TaskResult):
-                content, total_prompt_tokens, total_completion_tokens, total_tokens = return_last_message(
-                    message,
-                    source=self._registry[name].source_select,
-                    idx=self._registry[name].output_idx,
-                    terminate_texts=self._registry[name].termination_conditions,
-                )
-                yield ReturnMessage(
-                    content=content,
-                    total_completion_tokens=total_completion_tokens,
-                    total_prompt_tokens=total_prompt_tokens,
-                    total_tokens=total_tokens,
-                )
+                async for chunk in actor.run_stream(task=task_input):
+                    if isinstance(chunk, str):
+                        yield chunk
+                    elif isinstance(chunk, TaskResult):
+                        final_result = chunk
             else:
-                yield ReturnMessage(
-                    content="Somthing went wrong, please try again.",
-                    total_completion_tokens=0,
-                    total_prompt_tokens=0,
-                    total_tokens=0, 
-                )
-    
-    async def run(self, name: str, messages: List[ChatMessage]):
-        actor = self._get_actor(name)
-        if isinstance(actor, BaseGroupChat):
-            async for message in self.run_stream(name, messages):
-                continue
-            else:
-                return message
-        elif isinstance(actor, BaseChatAgent):
-            messages = await actor.run(task=messages)
-            content, total_prompt_tokens, total_completion_tokens, total_tokens = return_last_message(
-                messages,
-                source=self._registry[name].source_select,
-                idx=self._registry[name].output_idx,
-                terminate_texts=self._registry[name].termination_conditions,
-            )
-            return ReturnMessage(
-                content=content,
-                total_completion_tokens=total_completion_tokens,
-                total_prompt_tokens=total_prompt_tokens,
-                total_tokens=total_tokens,
-            )
+                print(f"Warning: Actor {model_name} does not support streaming. Running non-stream method.")
+                non_stream_result = await self.run(messages, name)
+                message_data, _, _, _ = return_last_message(non_stream_result, terminate_texts=termination_texts)
+                content = message_data.content if isinstance(message_data, ReturnMessage) else str(message_data)
+                yield content
+                final_result = non_stream_result
+
+            if final_result:
+                yield final_result
+
+        return stream_output()
+
+    async def run(self, messages: List[ChatMessage], name: Optional[str] = None) -> TaskResult:
+        model_name = name or self.default_model_name
+        actor = self._get_actor(model_name)
+        termination_texts = self._models[model_name].termination_texts
+
+        task_input: Union[str, Sequence[Dict[str, Any]]]
+        if len(messages) > 0:
+            task_input = [{'role': msg.role, 'content': msg.content or ""} for msg in messages]
         else:
-            raise TypeError("actor must be a AutoGen GroupChat(team) or Agent instance")
+            task_input = ""
+
+        result: TaskResult
+        if hasattr(actor, "run") and callable(actor.run):
+            run_result = await actor.run(task=task_input)
+            if isinstance(run_result, TaskResult):
+                result = run_result
+            else:
+                print(f"Warning: Actor {model_name} run() returned unexpected type {type(run_result)}. Creating basic TaskResult.")
+                result = TaskResult(summary=str(run_result))
+        else:
+            print(f"Error: Actor {model_name} does not have a run method.")
+            result = TaskResult(error=f"Actor {model_name} does not have a run method.")
+
+        return result

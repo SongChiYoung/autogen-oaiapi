@@ -1,4 +1,3 @@
-import json
 from ...base import BaseKeyManager
 from ...base.types import TOTAL_MODELS_NAME
 

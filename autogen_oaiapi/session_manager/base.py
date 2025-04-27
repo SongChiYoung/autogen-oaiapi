@@ -8,7 +8,7 @@ class BaseSessionStore(ABC):
     Subclasses must implement get and set methods for session management.
     """
     @abstractmethod
-    def get(self, session_id: str) -> SessionContext:
+    def get(self, session_id: str) -> Optional[SessionContext]:
         """
         Retrieve the session context for a given session ID.
 

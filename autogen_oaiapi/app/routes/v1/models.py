@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request
-from autogen_oaiapi.base.types import ModelResponse, ModelListRequest, ModelListResponse
+from autogen_oaiapi.base.types import ModelResponse, ModelListResponse
 
 router = APIRouter()
 

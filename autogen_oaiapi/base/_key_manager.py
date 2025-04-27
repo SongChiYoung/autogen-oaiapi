@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
 from pydantic import BaseModel, Field
-from typing import List, Dict, Sequence
+from typing import List, Dict, Optional
 from .utils import generate_key
 
 class APIKeyEntry(BaseModel):
     api_key: str = Field(..., description="API Key")
-    allowed_models: List[str] = Field(..., description="allowed models for this key, '*' for all models")
+    allowed_models: List[str] = Field(default_factory=list, description="allowed models for this key, '*' for all models")
     is_active: bool = Field(default=True, description="API Key active status")
     description: str | None = Field(default=None, description="Key description optional")
 
@@ -16,7 +16,7 @@ class APIKeyStore(BaseModel):
 
 class BaseAPIKeyStore(ABC):
     @abstractmethod
-    def get_api_key_entry(self, api_key: str) -> APIKeyEntry:
+    def get_api_key_entry(self, api_key: str) -> Optional[APIKeyEntry]:
         """Get the API key."""
         ...
 
@@ -36,27 +36,27 @@ class BaseAPIKeyStore(ABC):
         ...
 
     @abstractmethod
-    def get_all_api_key_entries(self) -> List[APIKeyEntry]:
+    def get_all_api_key_entries(self) -> List[tuple[str,APIKeyEntry]]:
         """Get all API key entries."""
         ...
 
 
 class DefaultAPIKeyStore(BaseAPIKeyStore):
     def __init__(self) -> None:
-        self._api_keys = {}
-        self._key2name = {}
+        self._api_keys: Dict[str, APIKeyEntry] = {}
+        self._key2name: Dict[str, str] = {}
 
     def set_api_key_entry_batch(self, key_entries: Dict[str, APIKeyEntry]) -> None:
         self._api_keys.update(key_entries)
         for key_name, entry in key_entries.items():
             self._key2name[entry.api_key] = key_name
 
-    def set_api_key_entry(self, key_name:str, key_entry: APIKeyEntry) -> None:
+    def set_api_key_entry(self, key_name: str, key_entry: APIKeyEntry) -> None:
         self._api_keys[key_name] = key_entry
-        self._key2name[key_entry.api_key] = key_entry.api_key
+        self._key2name[key_entry.api_key] = key_name
 
-    def get_api_key_entry(self, api_key: str) -> APIKeyEntry:
-        return self._api_keys.get(self._key2name.get(api_key, ""), None)
+    def get_api_key_entry(self, api_key: str) -> Optional[APIKeyEntry]:
+            return self._api_keys.get(self._key2name.get(api_key, ""), None)
 
     def set_api_key(self, key_name: str, api_key: str, description: str|None=None) -> APIKeyEntry:
         entry = APIKeyEntry(
@@ -81,7 +81,7 @@ class DefaultAPIKeyStore(BaseAPIKeyStore):
         if key_name in self._api_keys:
             self._api_keys[key_name].is_active = is_active
 
-    def get_all_api_key_entries(self) -> List[Dict[str,APIKeyEntry]]:
+    def get_all_api_key_entries(self) -> List[tuple[str,APIKeyEntry]]:
         return list(self._api_keys.items())
 
 
@@ -89,25 +89,25 @@ class BaseKeyManager(ABC):
     def __init__(self, key_store: BaseAPIKeyStore) -> None:
         self._key_store: BaseAPIKeyStore = key_store
 
-    def get_allow_models(self, api_key:str) -> list[str]:
+    def get_allow_models(self, api_key: str) -> List[str]:
         """Get the list of allowed models."""
         key_entry = self._key_store.get_api_key_entry(api_key)
         return key_entry.allowed_models if key_entry else []
 
-    def set_allow_model(self, key_name:str, model:str) -> bool:
+    def set_allow_model(self, key_name: str, model: str) -> bool:
         """Set the list of allowed models."""
         return self._key_store.set_model_to_api_key(key_name, model)
 
-    def set_api_key(self, key_name:str) -> str:
+    def set_api_key(self, key_name: str) -> str:
         """Set a new API key."""
         api_key = generate_key()
         self._key_store.set_api_key(key_name, api_key)
         return api_key
 
-    def get_api_key(self, key_name:str) -> str:
+    def get_api_key(self, key_name: str) -> str:
         """Get the API key."""
         key_entry = self._key_store.get_api_key_entry(key_name)
         if key_entry:
             return key_entry.api_key
         else:
-            return ""
+            return "BASE_API_KEY"
