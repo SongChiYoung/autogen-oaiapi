@@ -1,5 +1,5 @@
 import itertools
-from typing import Dict, List, Callable, cast, AsyncGenerator, Sequence
+from typing import Dict, List, Callable, AsyncGenerator, Sequence
 from autogen_agentchat.teams import BaseGroupChat
 from autogen_agentchat.agents import BaseChatAgent
 from autogen_agentchat.base import (
@@ -11,9 +11,10 @@ from autogen_agentchat.conditions import (
     TextMentionTermination,
 )
 
+from autogen_agentchat.messages import ChatMessage, BaseChatMessage, BaseAgentEvent
 from autogen_agentchat.base import TaskResult
 
-from ..base.types import Registry, ChatMessage, ReturnMessage, TOTAL_MODELS_NAME
+from ..base.types import Registry, ReturnMessage, TOTAL_MODELS_NAME
 from ..message import return_last_message
 
 
@@ -22,10 +23,10 @@ def get_termination_conditions(termination_condition: TerminationCondition) -> S
         return [termination_condition]
 
     if isinstance(termination_condition, TextMentionTermination):
-        return [termination_condition._termination_text]
+        return [termination_condition._termination_text]  # type: ignore
     
     if isinstance(termination_condition, OrTerminationCondition) or isinstance(termination_condition, AndTerminationCondition):
-        _termination_conditions = [get_termination_conditions(condition) for condition in termination_condition._conditions]
+        _termination_conditions = [get_termination_conditions(condition) for condition in termination_condition._conditions]  # type: ignore
         return list(itertools.chain.from_iterable(_termination_conditions))
     
     return []
@@ -66,31 +67,32 @@ class Model:
         source_select: str | None = None,
         output_idx: int | None = None,
         actor: BaseGroupChat | BaseChatAgent | None = None,
-    ) -> None | Callable[..., None]:
+    ) -> Callable[..., None]:
         if name == TOTAL_MODELS_NAME:
             # log, now allowed name
-            return
+            raise ValueError(f"name cannot be '{TOTAL_MODELS_NAME}', please use a different name")
         if source_select is not None and output_idx is not None:
             raise ValueError("source_select and output_idx cannot be used together")
         if source_select is None and output_idx is None:
             output_idx = 0
-        if actor is None:
+        # if actor is None:
             # If no actor is provided, return a decorator
-            def decorator(builder: Callable[..., BaseGroupChat|BaseChatAgent]) -> None:
-                actor = builder()
-                if isinstance(actor, BaseGroupChat):
-                    self._register(name, actor, source_select, output_idx, termination_conditions=get_termination_conditions(actor._termination_condition))
-                elif isinstance(actor, BaseChatAgent):
-                    if output_idx is not None and output_idx != 0:
-                        # log warning
-                        pass
-                    self._register(name, actor, None, output_idx)
-                else:
-                    raise TypeError("actor must be a AutoGen GroupChat(team) or Agent instance")
-            return decorator
-        else:
+        def decorator(builder: Callable[..., BaseGroupChat|BaseChatAgent]) -> None:
+            actor = builder()
+            if isinstance(actor, BaseGroupChat):
+                self._register(name, actor, source_select, output_idx, termination_conditions=get_termination_conditions(actor._termination_condition))  # type: ignore
+            elif isinstance(actor, BaseChatAgent):
+                if output_idx is not None and output_idx != 0:
+                    # log warning
+                    pass
+                self._register(name, actor, None, output_idx)
+            else:
+                raise TypeError("actor must be a AutoGen GroupChat(team) or Agent instance")
+        if actor is not None:
             # If an actor is provided, register it directly
-            self._register(name, actor, source_select, output_idx, termination_conditions=get_termination_conditions(actor._termination_condition))
+            self._register(name, actor, source_select, output_idx, termination_conditions=get_termination_conditions(actor._termination_condition))  # type: ignore
+
+        return decorator  # is okay?
 
     @property
     def model_list(self) -> List[str]:
@@ -112,18 +114,19 @@ class Model:
         else:
             raise TypeError("actor must be a AutoGen GroupChat(team) or Agent instance")
         
-    async def run_stream(self, name: str, messages: List[ChatMessage]) -> AsyncGenerator[ReturnMessage, None]:
+    async def run_stream(self, name: str, messages: Sequence[ChatMessage]) -> AsyncGenerator[ReturnMessage, None]:
         actor = self._get_actor(name)
         len_messages = len(messages)
         message_count = 0
         if isinstance(actor, BaseGroupChat):
             yield ReturnMessage(content="<think>")
 
+        message: BaseAgentEvent | BaseChatMessage | TaskResult | None = None
         async for message in actor.run_stream(task=messages):
             if len_messages > message_count:
                 message_count += 1
                 continue
-            if hasattr(message, "content") and message.content:
+            if not isinstance(message, TaskResult):
                 yield ReturnMessage(content=f"## [{message.source}]\n\n" + message.to_text())
         else:
             if isinstance(actor, BaseGroupChat):
@@ -150,17 +153,18 @@ class Model:
                     total_tokens=0, 
                 )
     
-    async def run(self, name: str, messages: List[ChatMessage]):
+    async def run(self, name: str, messages: List[ChatMessage]) -> ReturnMessage:
         actor = self._get_actor(name)
+        message = ReturnMessage(content="Somthing went wrong, please try again.", total_completion_tokens=0, total_prompt_tokens=0, total_tokens=0)
         if isinstance(actor, BaseGroupChat):
             async for message in self.run_stream(name, messages):
                 continue
             else:
                 return message
         elif isinstance(actor, BaseChatAgent):
-            messages = await actor.run(task=messages)
+            result_message = await actor.run(task=messages)
             content, total_prompt_tokens, total_completion_tokens, total_tokens = return_last_message(
-                messages,
+                result_message,
                 source=self._registry[name].source_select,
                 idx=self._registry[name].output_idx,
                 terminate_texts=self._registry[name].termination_conditions,

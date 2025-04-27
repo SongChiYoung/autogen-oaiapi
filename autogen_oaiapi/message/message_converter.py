@@ -3,9 +3,9 @@ from autogen_agentchat.messages import (
     TextMessage,
     ChatMessage,
 )
-from autogen_oaiapi.base.types import ChatMessage as _ChatMessage  # ToDo: Change name
+from autogen_oaiapi.base.types import ChatCompletionMessage  # ToDo: Change name
 
-def convert_to_llm_messages(messages: List[_ChatMessage]) -> List[ChatMessage]:
+def convert_to_llm_messages(messages: List[ChatCompletionMessage]) -> List[ChatMessage]:
     """
     Convert a list of ChatMessage objects to LLM-compatible TextMessage objects.
 

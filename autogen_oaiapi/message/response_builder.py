@@ -1,9 +1,9 @@
-import asyncio
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Any, cast, Sequence, Coroutine
 import time
 import uuid
+from autogen_agentchat.base import TaskResult
 from autogen_oaiapi.base.types import (
-    ChatMessage,
+    ChatCompletionMessage,
     ChatCompletionResponse,
     ChatCompletionResponseChoice,
     UsageInfo,
@@ -15,7 +15,7 @@ from autogen_oaiapi.base.types import (
     ReturnMessage,
 )
 
-def clean_message(content:str, removers:list[str]) -> str:
+def clean_message(content:str, removers:Sequence[str]) -> str:
     """
     Remove specified substrings and default markers from the message content.
 
@@ -72,39 +72,48 @@ async def build_content_chunk(
 
 
 def return_last_message(
-        result,
-        source=None,
-        idx=None,
-        terminate_texts=None
-    ):
+        result: TaskResult,
+        source: str|None=None,
+        idx: int|None=None,
+        terminate_texts: Sequence[str]|None=None
+    ) -> tuple[str, int, int, int]:
     total_prompt_tokens = 0
     total_completion_tokens = 0
 
     # print(f"result: {result}")
-    result_message=None
-
+    
+    if terminate_texts is None:
+        terminate_texts = []
+    
+    content = ""
     for message in result.messages:
         if tokens:=message.models_usage:
             total_prompt_tokens += tokens.prompt_tokens
             total_completion_tokens += tokens.completion_tokens
         if source is not None:
             if message.source == source:
-                result_message = message
+                _content = clean_message(message.to_text(), terminate_texts)
+                if _content:
+                    # update last source and unempty content
+                    content = _content
+
     total_tokens = total_prompt_tokens + total_completion_tokens
 
     if idx is not None:
         result_message = result.messages[-idx]
-
-    if result_message is None:
-        content = ""
-    else:
         content = result_message.to_text()
 
-    content = clean_message(content, terminate_texts)
+    if not content:
+        content = "somthing went wrong, please try again."
+
     return content, total_prompt_tokens, total_completion_tokens, total_tokens
 
 
-async def build_openai_response(model_name, result, is_stream=False) -> ChatCompletionResponse | AsyncGenerator[str, None] | None:
+async def build_openai_response(
+        model_name: str|None,
+        result:  AsyncGenerator[ReturnMessage, None] | Coroutine[Any, Any, ReturnMessage],
+        is_stream: bool=False
+    ) -> ChatCompletionResponse | AsyncGenerator[str, None] | None:
     """
     Build a response compatible with the OpenAI ChatCompletion API.
 
@@ -123,6 +132,7 @@ async def build_openai_response(model_name, result, is_stream=False) -> ChatComp
         model_name = "autogen-baseteam"
 
     if not is_stream:
+        result = cast(Coroutine[Any, Any, ReturnMessage], result)
         # Non-streaming response
         message: ReturnMessage = await result
         response = ChatCompletionResponse(
@@ -131,20 +141,21 @@ async def build_openai_response(model_name, result, is_stream=False) -> ChatComp
             choices=[
                 ChatCompletionResponseChoice(
                     index=0,
-                    message=ChatMessage(role= 'assistant', content=message.content), # LLM response
+                    message=ChatCompletionMessage(role= 'assistant', content=message.content), # LLM response
                     finish_reason="stop"
                 )
             ],
             usage=UsageInfo(
-                prompt_tokens=message.total_prompt_tokens,
-                completion_tokens=message.total_completion_tokens,
-                total_tokens=message.total_tokens
+                prompt_tokens=message.total_prompt_tokens if message.total_prompt_tokens else 0,
+                completion_tokens=message.total_completion_tokens if message.total_completion_tokens else 0,
+                total_tokens=message.total_tokens if message.total_tokens else 0
             )
         )
         return response
     
     else:
         # Streaming response
+        result = cast(AsyncGenerator[ReturnMessage, None], result)
         async def _stream_generator() -> AsyncGenerator[str, None]:
             request_id = f"chatcmpl-{uuid.uuid4().hex}"
             created_timestamp = int(time.time())
@@ -165,8 +176,13 @@ async def build_openai_response(model_name, result, is_stream=False) -> ChatComp
             yield f"data: {initial_chunk.model_dump_json()}\n\n"
             # await asyncio.sleep(0.01) # wait for a short time
 
+            message = ReturnMessage(
+                content="Somting went wrong, please try again.",
+                total_completion_tokens=0,
+                total_prompt_tokens=0,
+                total_tokens=0
+            )
             async for message in result:
-                message: ReturnMessage
                 content_chunk = await build_content_chunk(request_id, model_name, message.content)
                 yield f"data: {content_chunk.model_dump_json()}\n\n"
             else:
@@ -182,9 +198,9 @@ async def build_openai_response(model_name, result, is_stream=False) -> ChatComp
                         )
                     ],
                     usage=UsageInfo(
-                        prompt_tokens=message.total_prompt_tokens,
-                        completion_tokens=message.total_completion_tokens,
-                        total_tokens=message.total_tokens
+                        prompt_tokens=message.total_prompt_tokens if message.total_prompt_tokens else 0,
+                        completion_tokens=message.total_completion_tokens if message.total_completion_tokens else 0,
+                        total_tokens=message.total_tokens if message.total_tokens else 0
                     )
                 )
                 yield f"data: {final_chunk.model_dump_json()}\n\n"

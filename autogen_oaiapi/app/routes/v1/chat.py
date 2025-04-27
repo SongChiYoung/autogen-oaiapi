@@ -4,6 +4,7 @@ from fastapi.responses import StreamingResponse
 from autogen_oaiapi.base.types import ChatCompletionRequest, ChatCompletionResponse
 from autogen_oaiapi.message.message_converter import convert_to_llm_messages
 from autogen_oaiapi.message.response_builder import build_openai_response
+from autogen_oaiapi.model import Model
 
 router = APIRouter()
 
@@ -30,7 +31,7 @@ async def chat_completions(request: Request, body: ChatCompletionRequest):
     if request_model is None:
         request_model = "autogen-baseteam"
     
-    model = server.model
+    model: Model|None  = server.model
     if model is None:
         return {"error": f"Model '{request_model}' not found"}, 404
 

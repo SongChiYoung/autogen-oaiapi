@@ -4,7 +4,7 @@ import uuid
 import time
 
 
-class ChatMessage(BaseModel):
+class ChatCompletionMessage(BaseModel):
     """
     Represents a single chat message with a role and content.
 
@@ -26,7 +26,7 @@ class ChatCompletionRequest(BaseModel):
         model (str, optional): Model name to use.
     """
     session_id: Optional[str] = None
-    messages: List[ChatMessage]
+    messages: List[ChatCompletionMessage]
     stream: Optional[bool] = False
     model: Optional[str] = None
 
@@ -40,7 +40,7 @@ class ChatCompletionResponseChoice(BaseModel):
         finish_reason (str, optional): Reason for finishing.
     """
     index: int
-    message: ChatMessage
+    message: ChatCompletionMessage
     finish_reason: Optional[str] = "stop"
 
 class UsageInfo(BaseModel):

@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 from ..base.types import SessionContext
 
 class BaseSessionStore(ABC):
