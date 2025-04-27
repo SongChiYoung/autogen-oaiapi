@@ -28,28 +28,31 @@ class APIKeyModelMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
         if request.method == "OPTIONS":
             # CORS preflight does not auth test!
-            return await call_next(request)
-        auth_header = request.headers.get("Authorization")
-        if not auth_header:
-            auth_header = request.headers.get("authorization")  # for lowercase header
+            pass
+        else:        
+            auth_header = request.headers.get("Authorization")
+            if not auth_header:
+                auth_header = request.headers.get("authorization")  # for lowercase header
 
-        if not auth_header or not auth_header.startswith("Bearer "):
-            api_key = "BASE_API_KEY"
-            # return JSONResponse(status_code=404, content={"detail": "Authorization header missing or invalid"})
-        else: 
-            api_key = auth_header[len("Bearer "):]
-        
-        allowed_models = request.app.state.server.key_manager.get_allow_models(api_key)
+            if not auth_header or not auth_header.startswith("Bearer "):
+                api_key = "BASE_API_KEY"
+                # return JSONResponse(status_code=404, content={"detail": "Authorization header missing or invalid"})
+            else: 
+                api_key = auth_header[len("Bearer "):]
+            
+            allowed_models = request.app.state.server.key_manager.get_allow_models(api_key)
 
-        if not allowed_models:
-            return JSONResponse(status_code=403, content={"detail": "Invalid API Key"})
+            if not allowed_models:
+                return JSONResponse(status_code=403, content={"detail": "Invalid API Key"})
 
-        if request.method == "POST":
-            body = await request.json()
-            requested_model = body.get("model")
-            if requested_model:
-                if "*" not in allowed_models and requested_model not in allowed_models:
-                    return JSONResponse(status_code=403, content={"detail": f"Model '{requested_model}' not allowed for this API Key"})
+            if request.method == "POST":
+                body = await request.json()
+                requested_model = body.get("model")
+                if requested_model:
+                    if "*" not in allowed_models and requested_model not in allowed_models:
+                        return JSONResponse(status_code=403, content={"detail": f"Model '{requested_model}' not allowed for this API Key"})
+                else:
+                    return JSONResponse(status_code=400, content={"detail": "Model not specified in request body"})
 
-        request.state.api_key = api_key
+            request.state.api_key = api_key
         return await call_next(request)
