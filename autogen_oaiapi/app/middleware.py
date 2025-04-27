@@ -1,15 +1,20 @@
 
 from fastapi import Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 import time
 import uuid
 import logging
 
+from autogen_oaiapi.base.types import (
+    ChatCompletionErrorResponse,
+    ChatCompletionErrorDetail,
+)
+
 logger = logging.getLogger(__name__)
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         request_id = request.headers.get("x-request-id", str(uuid.uuid4()))
         request.state.request_id = request_id
 
@@ -25,7 +30,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
     
 
 class APIKeyModelMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         if request.method == "OPTIONS":
             # CORS preflight does not auth test!
             pass
@@ -43,16 +48,40 @@ class APIKeyModelMiddleware(BaseHTTPMiddleware):
             allowed_models = request.app.state.server.key_manager.get_allow_models(api_key)
 
             if not allowed_models:
-                return JSONResponse(status_code=403, content={"detail": "Invalid API Key"})
+                content = ChatCompletionErrorResponse(
+                    error=ChatCompletionErrorDetail(
+                        message="Invalid API Key",
+                        type="authentication_error",
+                        param="api_key",
+                        code="invalid_api_key"
+                    )
+                )
+                return JSONResponse(status_code=403, content=content)
 
             if request.method == "POST":
                 body = await request.json()
                 requested_model = body.get("model")
                 if requested_model:
                     if "*" not in allowed_models and requested_model not in allowed_models:
-                        return JSONResponse(status_code=403, content={"detail": f"Model '{requested_model}' not allowed for this API Key"})
+                        content = ChatCompletionErrorResponse(
+                            error=ChatCompletionErrorDetail(
+                                message=f"Model '{requested_model}' not allowed for this API Key",
+                                type="permission_error",
+                                param="model",
+                                code="model_not_found"
+                            )
+                        )
+                        return JSONResponse(status_code=403, content=content)
                 else:
-                    return JSONResponse(status_code=400, content={"detail": "Model not specified in request body"})
+                    content = ChatCompletionErrorResponse(
+                        error=ChatCompletionErrorDetail(
+                            message="Model not specified in request body",
+                            type="invalid_request_error",
+                            param="model",
+                            code="model_not_found"
+                        )
+                    )
+                    return JSONResponse(status_code=400, content=content)
 
             request.state.api_key = api_key
         return await call_next(request)

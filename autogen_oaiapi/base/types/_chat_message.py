@@ -56,6 +56,55 @@ class UsageInfo(BaseModel):
     completion_tokens: int
     total_tokens: int
 
+ErrorType = Literal[
+    "server_error",
+    "rate_limit_error",
+    "invalid_request_error",
+    "authentication_error",
+    "insufficient_quota",
+    "permission_error",
+    "not_found_error"
+]
+
+ErrorCode = Literal[
+    "rate_limit_exceeded",
+    "invalid_prompt",
+    "vector_store_timeout",
+    "invalid_image",
+    "invalid_image_format",
+    "invalid_base64_image",
+    "invalid_image_url",
+    "image_too_large",
+    "image_too_small",
+    "image_parse_error",
+    "image_content_policy_violation",
+    "invalid_image_mode",
+    "image_file_too_large",
+    "unsupported_image_media_type",
+    "empty_image_file",
+    "failed_to_download_image",
+    "image_file_not_found",
+    "model_not_found",
+    "invalid_api_key",
+    "insufficient_quota",
+    "quota_exceeded",
+    "account_deactivated",
+    "billing_not_active",
+    "server_error",
+    "timeout",
+    "overloaded"
+]
+
+class ChatCompletionErrorDetail(BaseModel):
+    message: str  # human-readable error message
+    type: ErrorType  # error type (e.g., "invalid_request_error", "rate_limit_exceeded", etc.)
+    param: Optional[str]  # parameter that caused the error (now null allways)
+    code: ErrorCode  # error code (e.g., "invalid_request_error", "rate_limit_exceeded", etc.)
+
+class ChatCompletionErrorResponse(BaseModel):
+    error: ChatCompletionErrorDetail
+
+
 class ChatCompletionResponse(BaseModel):
     """
     Response model for chat completion API.

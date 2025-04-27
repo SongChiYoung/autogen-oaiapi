@@ -1,5 +1,4 @@
 import os
-import json
 from typing import Optional
 from ..base.types import SessionContext
 from autogen_oaiapi.session_manager.base import BaseSessionStore
@@ -10,12 +9,12 @@ class FileSessionStore(BaseSessionStore):
 
     Stores each session context as a JSON file in the specified directory.
     """
-    def __init__(self, dir_path:str="sessions"):
+    def __init__(self, dir_path:str="sessions") -> None:
         os.makedirs(dir_path, exist_ok=True)
         self.dir_path = dir_path
         raise NotImplementedError("FileSessionStore is not implemented yet.")
 
-    def _file_path(self, session_id:str):
+    def _file_path(self, session_id:str) -> str:
         """
         Get the file path for a given session ID.
 
@@ -37,11 +36,8 @@ class FileSessionStore(BaseSessionStore):
         Returns:
             SessionContext: The session context object, or None if not found.
         """
-        try:
-            with open(self._file_path(session_id), "r") as f:
-                return json.load(f)
-        except FileNotFoundError:
-            return None
+        raise NotImplementedError("FileSessionStore is not implemented yet.")
+
 
     def set(self, session_id: str, session_context: SessionContext) -> None:
         """

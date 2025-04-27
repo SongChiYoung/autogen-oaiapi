@@ -43,7 +43,7 @@ async def build_content_chunk(
         model_name: str,
         content: str,
         finish_reason: str|None=None,
-    ):
+    ) -> ChatCompletionStreamResponse:
     """
     Build a ChatCompletionStreamResponse chunk for streaming responses.
 

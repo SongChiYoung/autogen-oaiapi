@@ -54,7 +54,7 @@ class Server:
         register_exception_handlers(self.app)
 
     @property
-    def model(self):
+    def model(self) -> Model:
         """
         Get the model instance.
 
@@ -64,7 +64,7 @@ class Server:
         return self._model
         
     @property
-    def session_store(self):
+    def session_store(self) -> BaseSessionStore:
         """
         Get the session store instance.
 
@@ -74,7 +74,7 @@ class Server:
         return self._session_store
     
     @property
-    def key_manager(self):
+    def key_manager(self) -> BaseKeyManager:
         """
         Get the key manager instance.
 
@@ -83,7 +83,7 @@ class Server:
         """
         return self._key_manager
 
-    def run(self, host:str="0.0.0.0", port:int=8000):
+    def run(self, host:str="0.0.0.0", port:int=8000) -> None:
         """
         Start the FastAPI server using Uvicorn.
 

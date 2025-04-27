@@ -31,7 +31,7 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
         content={"error": "InternalServerError", "detail": "An unexpected error occurred."},
     )
 
-def register_exception_handlers(app: FastAPI):
+def register_exception_handlers(app: FastAPI) -> None:
     """Register custom exception handlers for the FastAPI application."""
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)

@@ -3,7 +3,7 @@ from ...base.types import TOTAL_MODELS_NAME
 
 
 class NonKeyManager(BaseKeyManager):
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     def get_allow_models(self, api_key: str) -> list[str]:

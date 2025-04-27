@@ -1,5 +1,5 @@
 import itertools
-from typing import Dict, List, Callable, AsyncGenerator, Sequence
+from typing import Dict, List, Callable, AsyncGenerator, Sequence, Literal
 from autogen_agentchat.teams import BaseGroupChat
 from autogen_agentchat.agents import BaseChatAgent
 from autogen_agentchat.base import (
@@ -33,7 +33,7 @@ def get_termination_conditions(termination_condition: TerminationCondition) -> S
 
 
 class Model:
-    def __init__(self):
+    def __init__(self) -> None:
         self._registry: Dict[str, Registry] = {}
 
     def _register(
@@ -44,6 +44,7 @@ class Model:
         output_idx: int | None = None,
         termination_conditions: Sequence[str] | None = None,
     ) -> None:
+        actor_type: Literal["agent", "team"]
         if isinstance(actor, BaseGroupChat):
             actor_type = "team"
         elif isinstance(actor, BaseChatAgent):
