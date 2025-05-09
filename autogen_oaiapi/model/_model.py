@@ -201,6 +201,7 @@ class Model:
                     total_prompt_tokens=0,
                     total_tokens=0, 
                 )
+        del actor
     
     async def run(self, name: str, messages: List[ChatMessage]) -> ReturnMessage:
         """
