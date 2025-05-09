@@ -1,3 +1,4 @@
+import gc
 import itertools
 from typing import Dict, List, Callable, AsyncGenerator, Sequence, Literal
 from autogen_agentchat.teams import BaseGroupChat
@@ -201,7 +202,9 @@ class Model:
                     total_prompt_tokens=0,
                     total_tokens=0, 
                 )
-        del actor
+        gc.collect()
+        gc.garbage.clear() 
+        return
     
     async def run(self, name: str, messages: List[ChatMessage]) -> ReturnMessage:
         """
