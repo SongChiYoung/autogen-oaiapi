@@ -104,7 +104,7 @@ def return_last_message(
             total_completion_tokens += tokens.completion_tokens
         if source is not None:
             if message.source == source:
-                _content = clean_message(message.to_text(), terminate_texts)
+                _content = message.to_text()
                 if _content:
                     # update last source and unempty content
                     content = _content
@@ -114,6 +114,8 @@ def return_last_message(
     if idx is not None:
         result_message = result.messages[-idx]
         content = result_message.to_text()
+
+    content = clean_message(content, terminate_texts)
 
     if not content:
         content = "something went wrong, please try again."
