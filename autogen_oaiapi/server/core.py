@@ -11,7 +11,7 @@ from autogen_oaiapi.base import BaseKeyManager
 from autogen_oaiapi.manager.api_key._non_key_manager import NonKeyManager
 from autogen_agentchat.teams import BaseGroupChat
 from autogen_agentchat.agents import BaseChatAgent
-from autogen_oaiapi.manager.agent_manager import AgentManager
+from autogen_oaiapi.manager.agents.agent_manager import AgentManager
 
 class Server:
     """
