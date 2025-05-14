@@ -11,7 +11,7 @@ from autogen_oaiapi.base import BaseKeyManager
 from autogen_oaiapi.manager.api_key._non_key_manager import NonKeyManager
 from autogen_agentchat.teams import BaseGroupChat
 from autogen_agentchat.agents import BaseChatAgent
-from autogen_oaiapi.agent_manager import AgentManager
+from autogen_oaiapi.manager.agent_manager import AgentManager
 
 class Server:
     """
@@ -44,11 +44,9 @@ class Server:
                 team_path = Path(team)
                 if not team_path.exists():
                     raise FileNotFoundError(f"Team configuration file not found: {team_path}")
-                    
-                # Initialize AgentManager with the team file
+
                 agent_manager = AgentManager(agents_dir=str(team_path))
                 agent_manager.load_agents()
-                # make a loop to register all the agents in the team
                 for agent in agent_manager.list_agents():
                     self._model.register(
                         name=agent,

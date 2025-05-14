@@ -76,6 +76,8 @@ class Model:
             actor_type = "agent"
             actor_component = actor.dump_component()
         elif isinstance(actor, Dict):
+            # In case of a teammanager, we create a placeholder Model to hold the actor with Dict
+            # containing the agent configuration from JSON file
             actor_component = ComponentModel(type="team", provider="autogen", config = actor)
             actor_type = "teammanager"
         else:
@@ -130,6 +132,7 @@ class Model:
                 raise TypeError("actor must be a AutoGen GroupChat(team) or Agent instance")
         if actor is not None:
             if isinstance(actor, Dict):
+                # In case of a teammanager, actor will be a Dict with the agent configuration from JSON file
                 self._register(name, actor, source_select, output_idx)
             else:
                 # If an actor is provided, register it directly
@@ -255,7 +258,6 @@ class Model:
                 total_tokens=total_tokens,
             )
         elif isinstance(actor, TeamManager):
-            # print('&&&&&--------------------------------', self._registry[name].actor.config)
             result_message = await TeamManager().run(task=messages, team_config=self._registry[name].actor.config['team_config'])
             if isinstance(result_message, TeamResult):
                 messages = []
