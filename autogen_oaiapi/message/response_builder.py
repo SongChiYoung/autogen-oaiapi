@@ -2,6 +2,8 @@ from typing import AsyncGenerator, Any, cast, Sequence, Coroutine
 import time
 import uuid
 from autogen_agentchat.base import TaskResult
+from autogenstudio.datamodel.types import TeamResult
+from autogen_agentchat.messages import TextMessage
 from autogen_oaiapi.base.types import (
     ChatCompletionMessage,
     ChatCompletionResponse,
@@ -72,7 +74,7 @@ async def build_content_chunk(
 
 
 def return_last_message(
-        result: TaskResult,
+        result: TaskResult | TeamResult,
         source: str|None=None,
         idx: int|None=None,
         terminate_texts: Sequence[str]|None=None
@@ -91,23 +93,29 @@ def return_last_message(
     """
     total_prompt_tokens = 0
     total_completion_tokens = 0
-
-    # print(f"result: {result}")
     
     if terminate_texts is None:
         terminate_texts = []
     
     content = ""
-    for message in result.messages:
-        if tokens:=message.models_usage:
-            total_prompt_tokens += tokens.prompt_tokens
-            total_completion_tokens += tokens.completion_tokens
-        if source is not None:
-            if message.source == source:
-                _content = message.to_text()
-                if _content:
-                    # update last source and unempty content
-                    content = _content
+    if isinstance(result, TeamResult):
+        for message in result.task_result.messages:
+            if tokens:=message.models_usage:
+                total_prompt_tokens += tokens.prompt_tokens
+                total_completion_tokens += tokens.completion_tokens
+            if isinstance(message, TextMessage):
+                content = message.to_text()
+    else:
+        for message in result.messages:
+            if tokens:=message.models_usage:
+                total_prompt_tokens += tokens.prompt_tokens
+                total_completion_tokens += tokens.completion_tokens
+            if source is not None:
+                if message.source == source:
+                    _content = message.to_text()
+                    if _content:
+                        # update last source and unempty content
+                        content = _content
 
     total_tokens = total_prompt_tokens + total_completion_tokens
 
@@ -148,20 +156,42 @@ async def build_openai_response(
         result = cast(Coroutine[Any, Any, ReturnMessage], result)
         # Non-streaming response
         message: ReturnMessage = await result
-        response = ChatCompletionResponse(
-            # id, created is auto build from Field default_factory
-            model=model_name,
-            choices=[
+        
+        if isinstance(message, list):
+            choices = []
+            total_prompt_tokens = 0 
+            total_completion_tokens = 0
+            total_tokens = 0
+            for message_item in message:
+                if not message_item.content:
+                    continue
+                choices.append(ChatCompletionResponseChoice(
+                    index=0,
+                    message=ChatCompletionMessage(role= 'assistant', content=message_item.content), # LLM response
+                    finish_reason="stop"
+                ))
+                total_prompt_tokens += message_item.total_prompt_tokens if message_item.total_prompt_tokens else 0
+                total_completion_tokens += message_item.total_completion_tokens if message_item.total_completion_tokens else 0
+                total_tokens += message_item.total_tokens if message_item.total_tokens else 0
+        else:
+            total_prompt_tokens = message.total_prompt_tokens if message.total_prompt_tokens else 0
+            total_completion_tokens = message.total_completion_tokens if message.total_completion_tokens else 0
+            total_tokens = message.total_tokens if message.total_tokens else 0
+            choices = [
                 ChatCompletionResponseChoice(
                     index=0,
                     message=ChatCompletionMessage(role= 'assistant', content=message.content), # LLM response
                     finish_reason="stop"
                 )
             ],
+        response = ChatCompletionResponse(
+            # id, created is auto build from Field default_factory
+            model=model_name,
+            choices=choices,
             usage=UsageInfo(
-                prompt_tokens=message.total_prompt_tokens if message.total_prompt_tokens else 0,
-                completion_tokens=message.total_completion_tokens if message.total_completion_tokens else 0,
-                total_tokens=message.total_tokens if message.total_tokens else 0
+                prompt_tokens=total_prompt_tokens,
+                completion_tokens=total_completion_tokens,
+                total_tokens=total_tokens
             )
         )
         return response

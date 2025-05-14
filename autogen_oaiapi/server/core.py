@@ -1,4 +1,5 @@
-from typing import Optional
+from typing import Optional, Union
+from pathlib import Path
 from fastapi import FastAPI
 from autogen_oaiapi.app.router import register_routes
 from autogen_oaiapi.app.middleware import RequestContextMiddleware, APIKeyModelMiddleware
@@ -10,24 +11,25 @@ from autogen_oaiapi.base import BaseKeyManager
 from autogen_oaiapi.manager.api_key._non_key_manager import NonKeyManager
 from autogen_agentchat.teams import BaseGroupChat
 from autogen_agentchat.agents import BaseChatAgent
+from autogen_oaiapi.agent_manager import AgentManager
 
 class Server:
     """
     OpenAI-compatible API server for AutoGen teams.
 
     Args:
-        team: The team (e.g., GroupChat or SocietyOfMindAgent) to use for handling chat sessions.
-        output_idx (int | None): Index of the output message to select (if applicable).
-        source_select (str | None): Name of the agent whose output should be selected.
-        key_manager (BaseKeyManager | None): Custom key manager for API key management. Defaults to NonKeyManager. NonKeyManager is used for no key management.
-        session_store (BaseSessionStore | None): Custom session store backend. Defaults to in-memory.
+        team: Either a team object (e.g., GroupChat or SocietyOfMindAgent), path to a team.json file or a folder containing team.json files.
+        output_idx (Optional[int]): Index of the output message to select (if applicable).
+        source_select (Optional[str]): Name of the agent whose output should be selected.
+        key_manager (Optional[BaseKeyManager]): Custom key manager for API key management. Defaults to NonKeyManager. NonKeyManager is used for no key management.
+        session_store (Optional[BaseSessionStore]): Custom session store backend. Defaults to in-memory.
     """
     def __init__(
             self,
-            team: BaseGroupChat | BaseChatAgent | None=None,
-            output_idx:int|None = None,
-            source_select:str|None = None,
-            key_manager:BaseKeyManager|None = None,
+            team: Union[BaseGroupChat, BaseChatAgent, str, Path, None] = None,
+            output_idx: Optional[int] = None,
+            source_select: Optional[str] = None,
+            key_manager: Optional[BaseKeyManager] = None,
             session_store: Optional[BaseSessionStore] = None
         ):
         self._session_store = session_store or InMemorySessionStore()
@@ -35,15 +37,32 @@ class Server:
         self._model = Model()
         self.app = FastAPI()
 
-        # Register the team with the model
+        # Handle team initialization
         if team is not None:
-            self._model.register(
-                name="autogen-baseteam",
-                actor=team,
-                source_select=source_select,
-                output_idx=output_idx,
-            )
-
+            if isinstance(team, (str, Path)):
+                # Load team from configuration file
+                team_path = Path(team)
+                if not team_path.exists():
+                    raise FileNotFoundError(f"Team configuration file not found: {team_path}")
+                    
+                # Initialize AgentManager with the team file
+                agent_manager = AgentManager(agents_dir=str(team_path))
+                agent_manager.load_agents()
+                # make a loop to register all the agents in the team
+                for agent in agent_manager.list_agents():
+                    self._model.register(
+                        name=agent,
+                        actor=agent_manager.get_agent(agent),
+                        source_select=source_select,
+                        output_idx=output_idx,
+                    )
+            else:
+                self._model.register(
+                    name="autogen-baseteam",
+                    actor=team,
+                    source_select=source_select,
+                    output_idx=output_idx,
+                )
         # Register routers, middlewares, and exception handlers
         register_routes(self.app)
         # server is passed to the app state for access in routes
@@ -83,7 +102,7 @@ class Server:
         """
         return self._key_manager
 
-    def run(self, host:str="0.0.0.0", port:int=8000) -> None:
+    def run(self, host: str = "0.0.0.0", port: int = 8000) -> None:
         """
         Start the FastAPI server using Uvicorn.
 
