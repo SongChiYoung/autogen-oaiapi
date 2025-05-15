@@ -191,7 +191,11 @@ class Model:
             yield ReturnMessage(content="<think>")
 
         message: BaseAgentEvent | BaseChatMessage | TaskResult | None = None
-        async for message in actor.run_stream(task=messages):
+        team_config = {}
+        if isinstance(actor, TeamManager):
+            team_config = self._registry[name].actor.config['team_config']
+        
+        async for message in actor.run_stream(task=messages, team_config = team_config):
             if len_messages > message_count:
                 message_count += 1
                 continue

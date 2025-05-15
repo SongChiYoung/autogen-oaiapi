@@ -4,6 +4,10 @@ import uuid
 import time
 
 
+class ChatCompletionMessageContent(BaseModel):
+    text: str
+    type: str # "text", "image_url", "tool_result" - Didnt use an enum because all types are unknown
+
 class ChatCompletionMessage(BaseModel):
     """
     Represents a single chat message with a role and content.
@@ -13,7 +17,7 @@ class ChatCompletionMessage(BaseModel):
         content (str | None): The message content.
     """
     role: Literal["user", "assistant", "system"]
-    content: Union[str, None]
+    content: Union[str, List[ChatCompletionMessageContent], None]
 
 class ChatCompletionRequest(BaseModel):
     """
