@@ -17,6 +17,11 @@ def convert_to_llm_messages(messages: List[ChatCompletionMessage]) -> List[ChatM
     """
     converted: List[ChatMessage] = []
     for m in messages:
-        if m.content:
+        if not m.content:
+            continue
+        if isinstance(m.content, list):
+            for c in m.content:
+                converted.append(TextMessage(content=c.text, source=m.role))
+        elif isinstance(m.content, str):
             converted.append(TextMessage(content=m.content, source=m.role))
     return converted

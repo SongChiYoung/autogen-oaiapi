@@ -7,7 +7,7 @@ class Registry(BaseModel):
     actor: ComponentModel
     source_select: str | None = None
     output_idx: int | None = None
-    type: Literal["agent", "team"]
+    type: Literal["agent", "team", "teammanager"]
     termination_conditions: Sequence[str] = []
 
 
